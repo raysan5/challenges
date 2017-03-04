@@ -1,7 +1,7 @@
 
 # Challenge 01: Blocks game
 
-*by Ramon Santamaria - @raysan5*
+*by Ramon Santamaria - [@raysan5](https://twitter.com/raysan5)*
 
 ## Introduction
 In this challenge we will implement a Blocks game similar to the well-known game [Arkanoid](https://en.wikipedia.org/wiki/Arkanoid) (Taito, 1986). Along this process we will learn how the videogames life cycle works, how to manage the window and player inputs, and how to draw some graphics on screen.
@@ -23,7 +23,7 @@ This game is developed using [raylib](http://www.raylib.com/), a simple and easy
 
 Lesson | Learning outcome | Source file
 :-----:|------------------|:-----------
-01 | raylib functionality, videogame lyfe cycle, basic screens management | 01_blocks_game_intro.c
+01 | raylib functionality, <br> videogame lyfe cycle, <br> basic screens management | 01_blocks_game_intro.c
 02 | draw basic shapes (circle, rectangle) | 02_blocks_game_drawing.c
 03 | inputs management | 03_blocks_game_inputs.c
 04 | collision detection and resolution | 04_blocks_game_collisions.c

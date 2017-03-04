@@ -13,11 +13,11 @@ This game is developed using [raylib](http://www.raylib.com/) library.
  - raylib functionality and possibilities
  - Videogame life cycle (Init -> Update -> Draw -> DeInit)
  - Basic screens management with screens transition
- - Graphic device and inputs management (keyboard, mouse)
  - Basic shapes drawing (circle, rectangle)
+ - Inputs management (keyboard, mouse)
  - Collision detection and resolution
  - Textures loading and drawing
- - SpriteFonts loading and text drawing
+ - Fonts loading and text drawing
  - Sounds loading and playing
 
 *animated gif*

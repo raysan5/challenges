@@ -23,27 +23,27 @@ This game is developed using [raylib](http://www.raylib.com/), a simple and easy
 
 Lesson | Learning outcome | Source file | Related functions
 :-----:|------------------|:------------|:-----------------:
-01 | raylib functionality, <br>videogame lyfe cycle, <br>basic screens management | [01_blocks_game_intro.c](lessons/01_blocks_game_intro.c) | InitWindow(), CloseWindow(), <br>BeginDrawing(), EndDrawing()
-02 | draw basic shapes (circle, rectangle) | [02_blocks_game_drawing.c](lessons/02_blocks_game_drawing.c) | DrawRectangle(), DrawCircle()
-03 | inputs management | [03_blocks_game_inputs.c](lessons/03_blocks_game_inputs.c) | IsKeyPressed(), IsKeyDown(), <br>IsMouseButtonPressed(), IsMouseButtonDown(), <br>GetMouseX(), GetMouseY()
-04 | collision detection and resolution | [04_blocks_game_collisions.c](lessons/04_blocks_game_collisions.c) | CheckCollisionCircleRec(), <br>CheckCollisionRecs(), <br>CheckCollisionCircles()
-05 | textures loading and drawing | [05_blocks_game_textures.c](lessons/05_blocks_game_textures.c) | LoadTexture(), UnloadTexture(), <br>DrawTexture()
-06 | fonts loading and text drawing | [06_blocks_game_text.c](lessons/06_blocks_game_text.c) | LoadSpriteFont(), UnloadSpriteFont(), <br>DrawText(), DrawTextEx()
-07 | sounds loading and playing | [07_blocks_game_sounds.c](lessons/07_blocks_game_sounds.c) | InitAudioDevice(), CloseAudioDevice(), LoadSound(), UnloadSound(), PlaySound()
+[01](#lesson-01-introduction-to-raylib-and-videogames-programming) | raylib functionality, <br>videogame lyfe cycle, <br>basic screens management | [01_blocks_game_intro.c](lessons/01_blocks_game_intro.c) | InitWindow(), CloseWindow(), <br>BeginDrawing(), EndDrawing()
+[02](#lesson-02-draw-basic-shapes-circle-rectangle) | draw basic shapes (circle, rectangle) | [02_blocks_game_drawing.c](lessons/02_blocks_game_drawing.c) | DrawRectangle(), DrawCircle()
+[03](#lesson-03-inputs-management-keyboard-mouse) | inputs management | [03_blocks_game_inputs.c](lessons/03_blocks_game_inputs.c) | IsKeyPressed(), IsKeyDown(), <br>IsMouseButtonPressed(), IsMouseButtonDown(), <br>GetMouseX(), GetMouseY()
+[04](#lesson-04-collision-detection-and-resolution) | collision detection and resolution | [04_blocks_game_collisions.c](lessons/04_blocks_game_collisions.c) | CheckCollisionCircleRec(), <br>CheckCollisionRecs(), <br>CheckCollisionCircles()
+[05](#lesson-05-textures-loading-and-drawing) | textures loading and drawing | [05_blocks_game_textures.c](lessons/05_blocks_game_textures.c) | LoadTexture(), UnloadTexture(), <br>DrawTexture()
+[06](#lesson-06-spritefonts-loading-and-text-drawing) | fonts loading and text drawing | [06_blocks_game_text.c](lessons/06_blocks_game_text.c) | LoadSpriteFont(), UnloadSpriteFont(), <br>DrawText(), DrawTextEx()
+[07](#lesson-07-sounds-loading-and-playing) | sounds loading and playing | [07_blocks_game_sounds.c](lessons/07_blocks_game_sounds.c) | InitAudioDevice(), CloseAudioDevice(), LoadSound(), UnloadSound(), PlaySound()
 
-:exclamation: **NOTE:** Most of the documentation for the challenge is directly included in the source code source as code comments for every task to achieve. Read carefully those comments to understand every task and how implement the proposed solutions in the form of *TODO* points.
+**NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments, in the form of *TODO* points, for every task to be completed. Read carefully those comments to understand every task and how implement the proposed solutions.
 
 ### Lesson 01: Introduction to raylib and videogames programming
 
-In this first lesson we will introduce raylib and videogames programming. We will setup raylib and take a look to its functionality; we will see how videogame life cycle works and we will implement a basic screens management system for our game. 
+In this first lesson we will introduce raylib library and videogames programming principles. We will setup raylib and take a look to its functionality; we will see how videogame life cycle works and we will implement a basic screens management system for our game.
 
-All code provided is in C language for simplicity and clearness but it's up to the student to use more complex C++ code structures (OOP) if desired.
+**NOTE:** All code provided is in C language for simplicity and clearness but it's up to the student to use more complex C++ code structures (OOP) if desired.
 
 **Introduction to raylib**
 
-raylib follows the KISS principle, providing simple functions with clear naming conventions. Main documentation for the library functionality is condensed in a single [cheatsheet](http://www.raylib.com/cheatsheet/cheatsheet.html).
+raylib is simple and easy-to-use library to learn videogmaes programming. raylib abstracts the user from the more low level libraries like OpenGL, OpenAL or GLFW3. Following challenges focus on those deeper levels.
 
-raylib is structured in several C files, most of them decoupled from each other and functionality is mostly configurable on library compilation
+Here there are some interesting links to know more about raylib:
 
  - [raylib Features](http://www.raylib.com)
  - [raylib Architecture](https://github.com/raysan5/raylib/wiki/raylib-arquitecture)
@@ -52,9 +52,18 @@ raylib is structured in several C files, most of them decoupled from each other 
  - [raylib Examples](http://www.raylib.com/examples.html)
  - [raylib Wiki](https://github.com/raysan5/raylib/wiki)
 
+raylib follows the KISS principle, providing simple functions with clear naming conventions. Main documentation for the library functionality is condensed in a single [cheatsheet](http://www.raylib.com/cheatsheet/cheatsheet.html).
+
+raylib is structured in several C files, most of them decoupled from each other and functionality is mostly configurable on library compilation
+
 **Environment setup**
 
-Just download and install raylib. raylib is distributed on Windows as a standalone installer containing all required tools to develop videogames in C/C++.
+Just [download and install raylib](http://www.raylib.com/). raylib is distributed on Windows as a standalone installer containing all required tools to develop videogames in C/C++. Tools included with installer are preconfigured versions of:
+
+ - MinGW 5.3.0 - GCC C compiler for Windows
+ - Notepad++ 7.1 - Windows simple code editor
+ 
+Those are the recommended tools to develop this challenge. In case some students desire to use other tools or works in another environment different than Windows, is up to them to setup the required environment. Some information is provided in raylib Wiki to configure raylib on [OSX](https://github.com/raysan5/raylib/wiki/Compile-for-OSX) and [GNU Linux](https://github.com/raysan5/raylib/wiki/Compile-for-GNU-Linux) platforms.
  
 To compile the code, you will be using the Notepad++ script `raylib_compile_execute`.
 

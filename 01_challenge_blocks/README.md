@@ -6,6 +6,8 @@
 ## Introduction
 In this challenge we will implement a Blocks game similar to the well-known game [Arkanoid](https://en.wikipedia.org/wiki/Arkanoid) (Taito, 1986). Along this process we will learn how the videogames life cycle works, how to manage the window and player inputs, and how to draw some graphics on screen.
 
+**NOTE:** All code provided is in C language for simplicity and clearness but it's up to the student to use more complex C++ code structures (OOP) if desired.
+
 **Learning Outcomes:**
  - raylib functionality and possibilities
  - Videogame life cycle (Init -> Update -> Draw -> DeInit)
@@ -35,9 +37,9 @@ Lesson | Learning outcome | Source file | Related functions
 
 ### Lesson 01: Introduction to raylib and videogames programming
 
-In this first lesson we will introduce raylib library and videogames programming principles. We will setup raylib and take a look to its functionality; we will see how videogame life cycle works and we will implement a basic screens management system for our game.
+*Lesson code file to review: [01_blocks_game_intro.c](lessons/01_blocks_game_intro.c)*
 
-**NOTE:** All code provided is in C language for simplicity and clearness but it's up to the student to use more complex C++ code structures (OOP) if desired.
+In this first lesson we will introduce raylib library and videogames programming principles. We will setup raylib and take a look to its functionality; we will see how videogame life cycle works and we will implement a basic screens management system for our game.
 
 **Introduction to raylib**
 
@@ -54,30 +56,32 @@ Here there are some interesting links to know more about raylib:
 
 raylib follows the KISS principle, providing simple functions with clear naming conventions. Main documentation for the library functionality is condensed in a single [cheatsheet](http://www.raylib.com/cheatsheet/cheatsheet.html).
 
-raylib is structured in several C files, most of them decoupled from each other and functionality is mostly configurable on library compilation
-
 **Environment setup**
 
-Just [download and install raylib](http://www.raylib.com/). raylib is distributed on Windows as a standalone installer containing all required tools to develop videogames in C/C++. Tools included with installer are preconfigured versions of:
+Just [download and install raylib](http://www.raylib.com/). raylib is distributed on Windows as a standalone installer containing all required tools to develop videogames in C/C++. Tools included with installer are **preconfigured** versions of:
 
- - MinGW 5.3.0 - GCC C compiler for Windows
- - Notepad++ 7.1 - Windows simple code editor
+ - [MinGW](http://www.mingw.org/) - Minimalistic GNU for Windows, including GCC compiler and several tools and libraries
+ - [Notepad++](https://notepad-plus-plus.org) - Windows simple code editor, preconfigured with multiple compiling scripts
  
-Those are the recommended tools to develop this challenge. In case some students desire to use other tools or works in another environment different than Windows, is up to them to setup the required environment. Some information is provided in raylib Wiki to configure raylib on [OSX](https://github.com/raysan5/raylib/wiki/Compile-for-OSX) and [GNU Linux](https://github.com/raysan5/raylib/wiki/Compile-for-GNU-Linux) platforms.
- 
-To compile the code, you will be using the Notepad++ script `raylib_compile_execute`.
+Those are the recommended tools to develop this challenge (and following ones). In case some students desire to use other tools or want to work in another environment different than Windows, is up to them to setup the required toolchain. Some information is provided in [raylib Wiki](https://github.com/raysan5/raylib/wiki) to configure raylib on [OSX](https://github.com/raysan5/raylib/wiki/Compile-for-OSX) and [GNU Linux](https://github.com/raysan5/raylib/wiki/Compile-for-GNU-Linux) platforms.
 
 **Videogame life cycle**
 
-Following diagram shows the standard videogame life cycle, the related processes for every part of the cycle and the raylib functions involved in those processes:
+The standard videogame life cycle consist of 4 parts: **Initialization -> [ Update -> Draw ] -> DeInitialization**
+
+The following diagram shows this life cycle, the related processes for every part of the cycle and the raylib functions involved in those processes:
 
 ![image](https://github.com/raysan5/raylib/blob/master/docs/images/raylib_game_loop_full.png)
+
+*TODO: Add info on screen management*
 
 Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
  - [core_basic_window](http://www.raylib.com/examples/web/loader.html?name=core_basic_window) - simple code showing a videogame life cycle
  - [basic_game template](https://github.com/raysan5/raylib/blob/develop/templates/basic_game/basic_game.c) - basic screens management structure
 
-### Lesson 02: Draw basic shapes (circle, rectangle) 
+### Lesson 02: Draw basic shapes (circle, rectangle)
+
+*Lesson code file to review: [02_blocks_game_drawing.c](lessons/02_blocks_game_drawing.c)*
 
 To draw basic shapes, raylib provides the following functions:
 ```c
@@ -96,6 +100,8 @@ Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
  
 
 ### Lesson 03: Inputs management (keyboard, mouse)
+
+*Lesson code file to review: [03_blocks_game_inputs.c](lessons/03_blocks_game_inputs.c)*
 
 To manage inputs, raylib provides a set of functions to detect keyboard and mouse current state:
 ```c
@@ -120,6 +126,8 @@ Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
 
 ### Lesson 04: Collision detection and resolution
 
+*Lesson code file to review: [04_blocks_game_collisions.c](lessons/04_blocks_game_collisions.c)*
+
 To check collisions between simple shapes (circle, rectangle), raylib provides the following functions:
 ```c
 bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2);                                    // Check collision between two rectangles
@@ -129,6 +137,8 @@ bool CheckCollisionCircleRec(Vector2 center, float radius, Rectangle rec);      
 Those functions return *true* if the involved rectangles/circles collide, is up to the user to resolve that collision in an appropiate way. Keep always in mind that collisions in games are always treatened as two separate parts: **detection** and **resolution**.
 
 ### Lesson 05: Textures loading and drawing
+
+*Lesson code file to review: [05_blocks_game_textures.c](lessons/05_blocks_game_textures.c)*
 
 Actually texture loading and drawing is a quite complex process: 
 
@@ -155,6 +165,8 @@ Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
 
 ### Lesson 06: SpriteFonts loading and text drawing
 
+*Lesson code file to review: [06_blocks_game_text.c](lessons/06_blocks_game_text.c)*
+
 To draw text, raylib loads a default font on `InitWindow()`, that font is used when drawing text with:
 ```c
 void DrawText(const char *text, int posX, int posY, int fontSize, Color color);
@@ -174,6 +186,9 @@ Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
 
 
 ### Lesson 07: Sounds loading and playing
+
+*Lesson code file to review: [07_blocks_game_sounds.c](lessons/07_blocks_game_sounds.c)*
+
 To deal with audio on raylib, first of all, audio device must be initialized. To manage audio device, use the following functions:
 ```c
 void InitAudioDevice(void);                  // Initialize audio device and context

@@ -80,6 +80,11 @@ void DrawRectangleLines(int posX, int posY, int width, int height, Color color);
 ```
 Most of those functions are self explanatory, they must be called in the draw part of the loop, between `BeginDrawing()` and `EndDrawing()`. User needs to provide the drawing position (x, y), size and color. Just note that in case of rectangle-shapes drawing origin is upper-left corner while drawing circle-shapes origin is set in the center of the circle.
 
+Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
+ - [shapes_basic_shapes](http://www.raylib.com/examples/web/loader.html?name=shapes_basic_shapes) - basic shapes drawing
+ - [shapes_logo_raylib](http://www.raylib.com/examples/web/loader.html?name=shapes_logo_raylib) - raylib logo drawn using shapes
+ 
+
 ### Lesson 03: Inputs management (keyboard, mouse)
 
 To manage inputs, raylib provides a set of functions to detect keyboard and mouse current state:

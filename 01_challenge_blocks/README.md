@@ -31,7 +31,7 @@ Lesson | Learning outcome | Source file | Related functions
 [06](#lesson-06-spritefonts-loading-and-text-drawing) | fonts loading and text drawing | [06_blocks_game_text.c](lessons/06_blocks_game_text.c) | LoadSpriteFont(), UnloadSpriteFont(), <br>DrawText(), DrawTextEx()
 [07](#lesson-07-sounds-loading-and-playing) | sounds loading and playing | [07_blocks_game_sounds.c](lessons/07_blocks_game_sounds.c) | InitAudioDevice(), CloseAudioDevice(), LoadSound(), UnloadSound(), PlaySound()
 
-**NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments, in the form of *TODO* points, for every task to be completed. Read carefully those comments to understand every task and how implement the proposed solutions.
+**NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments, in the form of *TODO* points for every task to be completed. Read carefully those comments to understand every task and how implement the proposed solutions.
 
 ### Lesson 01: Introduction to raylib and videogames programming
 
@@ -48,7 +48,7 @@ Here there are some interesting links to know more about raylib:
  - [raylib Features](http://www.raylib.com)
  - [raylib Architecture](https://github.com/raysan5/raylib/wiki/raylib-arquitecture)
  - [raylib Functions Cheatsheet](http://www.raylib.com/cheatsheet/cheatsheet.html)
- - [raylib Data Structures]()
+ - [raylib Data Structures](https://github.com/raysan5/raylib/wiki/raylib-data-structures)
  - [raylib Examples](http://www.raylib.com/examples.html)
  - [raylib Wiki](https://github.com/raysan5/raylib/wiki)
 

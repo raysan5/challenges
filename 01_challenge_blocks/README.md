@@ -1,7 +1,7 @@
 
 # Challenge 01: Blocks game
 
-*by Ramon Santamaria - [@raysan5](https://twitter.com/raysan5)*
+*by Ramon Santamaria ([@raysan5](https://twitter.com/raysan5))*
 
 ## Introduction
 In this challenge we will implement a Blocks game similar to the well-known game [Arkanoid](https://en.wikipedia.org/wiki/Arkanoid) (Taito, 1986). Along this process we will learn how the videogames life cycle works, how to manage the window and player inputs, and how to draw some graphics on screen.
@@ -67,6 +67,16 @@ Those are the recommended tools to develop this challenge. In case some students
  
 To compile the code, you will be using the Notepad++ script `raylib_compile_execute`.
 
+**Videogame life cycle**
+
+Following diagram shows the standard videogame life cycle, the related processes for every part of the cycle and the raylib functions involved in those processes:
+
+![image](https://github.com/raysan5/raylib/blob/master/docs/images/raylib_game_loop_full.png)
+
+Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
+ - [core_basic_window](http://www.raylib.com/examples/web/loader.html?name=core_basic_window) - simple code showing a videogame life cycle
+ - [basic_game template](https://github.com/raysan5/raylib/blob/develop/templates/basic_game/basic_game.c) - basic screens management structure
+
 ### Lesson 02: Draw basic shapes (circle, rectangle) 
 
 To draw basic shapes, raylib provides the following functions:
@@ -78,7 +88,7 @@ void DrawCircleLines(int centerX, int centerY, float radius, Color color);
 void DrawRectangle(int posX, int posY, int width, int height, Color color);
 void DrawRectangleLines(int posX, int posY, int width, int height, Color color);
 ```
-Most of those functions are self explanatory, they must be called in the draw part of the loop, between `BeginDrawing()` and `EndDrawing()`. User needs to provide the drawing position (x, y), size and color. Just note that in case of rectangle-shapes drawing origin is upper-left corner while drawing circle-shapes origin is set in the center of the circle.
+Most of those functions are self explanatory, they must be called in the draw part of the game loop, between `BeginDrawing()` and `EndDrawing()`. User needs to provide the drawing position (x, y), size and color. Just note that in case of rectangle-shapes drawing origin is upper-left corner while drawing circle-shapes origin is set in the center of the circle.
 
 Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
  - [shapes_basic_shapes](http://www.raylib.com/examples/web/loader.html?name=shapes_basic_shapes) - basic shapes drawing
@@ -103,6 +113,10 @@ int GetMouseY(void);                      // Returns mouse position Y
 ```
 ...
 
+Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
+ - [core_input_keys](http://www.raylib.com/examples/web/loader.html?name=core_input_keys) - keyboard inputs check
+ - [core_input_mouse](http://www.raylib.com/examples/web/loader.html?name=core_input_mouse) - mouse inputs check
+
 ### Lesson 04: Collision detection and resolution
 To check collisions between simple shapes (circle, rectangle), raylib provides the following functions:
 ```c
@@ -122,6 +136,11 @@ void DrawTexture(Texture2D texture, int posX, int posY, Color tint); // Draw a t
 ```
 ...
 
+Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
+ - [textures_logo_raylib](http://www.raylib.com/examples/web/loader.html?name=textures_logo_raylib) - texture loading and drawing
+ - [textures_rectangle](http://www.raylib.com/examples/web/loader.html?name=textures_rectangle) - texture loading and piece drawing
+
+
 ### Lesson 06: SpriteFonts loading and text drawing
 To draw text, raylib loads a default font on `InitWindow()`, that font is used when drawing text with:
 ```c
@@ -129,8 +148,18 @@ void DrawText(const char *text, int posX, int posY, int fontSize, Color color);
 ```
 But raylib users can also load custom fonts, raylib support multiple fonts formats, including TTF format and BMFonts.
 
+Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
+ - [text_sprite_fonts](http://www.raylib.com/examples/web/loader.html?name=text_sprite_fonts) - sprite fonts loading and drawing
+ - [text_bmfonts_ttf](http://www.raylib.com/examples/web/loader.html?name=text_bmfont_ttf) - bmfonts and ttf fonts loading
+ - [text_writing_anim](http://www.raylib.com/examples/web/loader.html?name=text_writing_anim) - text writting animation effect
+
 
 ### Lesson 07: Sounds loading and playing
+To deal with audio on raylib, first of all, audio device must be initialized. To manage audio device, use the following functions:
+```c
+void InitAudioDevice(void);                  // Initialize audio device and context
+void CloseAudioDevice(void);                 // Close the audio device and context (and music stream)
+```
 To load and play sounds, raylib provides the following functions:
 ```c
 Sound LoadSound(const char *fileName);      // Load sound from file into memory
@@ -141,35 +170,13 @@ void PauseSound(Sound sound);               // Pause a sound
 void ResumeSound(Sound sound);              // Resume a paused sound
 void StopSound(Sound sound);                // Stop playing a sound
 ```
-But notice that audio device must be initialized before loading any sound. To manage audio device, use the following functions:
-```c
-void InitAudioDevice(void);                  // Initialize audio device and context
-void CloseAudioDevice(void);                 // Close the audio device and context (and music stream)
-```
+Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
+ - [audio_sound_loading](http://www.raylib.com/examples/web/loader.html?name=audio_sound_loading) - keyboard inputs check
 
-
-
-## Code provided:
-
-[lessons/00_raylib_blocks_intro](lessons/00_raylib_blocks_intro.c) 
- - lessons/02_raylib_blocks_inputs
- - lessons/03_raylib_blocks_screen_manage
- - lessons/04_raylib_blocks_textures
- - lessons/05_raylib_blocks_audio
- - lessons/06_raylib_blocks_details
- - lessons/resources -> Some useful graphics/text/audio resources for the game
-
-----------------------------------------
-```c
-solutions/00_raylib_blocks_intro
-solutions/02_raylib_blocks_inputs
-solutions/03_raylib_blocks_screen_manage
-solutions/04_raylib_blocks_textures
-solutions/05_raylib_blocks_audio
-solutions/06_raylib_blocks_details
-```
 ##Getting help 
 We strongly encourage you using the online [raylib forum](forum.raylib.com) or the official [UOC forum]() to discuss challenges with other students. However, we recommend not to look at any source code written by other students or share your source code with others **while working on the challenge**.
 
 ##License
 All code provided for this challenge is licensed under MIT License. Check [LICENSE](../LICENSE) for further details.
+
+*Copyright (c) 2017 Ramon Santamaria ([@raysan5](https://twitter.com/raysan5))*

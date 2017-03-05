@@ -110,23 +110,36 @@ bool IsMouseButtonReleased(int button);   // Detect if a mouse button has been r
 bool IsMouseButtonUp(int button);         // Detect if a mouse button is NOT being pressed
 int GetMouseX(void);                      // Returns mouse position X
 int GetMouseY(void);                      // Returns mouse position Y
+Vector2 GetMousePosition(void);           // Returns mouse position XY
 ```
-...
+This set of functions can be used in the `update` part of the game loop to check **if** one key or button has been pressed (or is being pressed in that frame).  
 
 Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
  - [core_input_keys](http://www.raylib.com/examples/web/loader.html?name=core_input_keys) - keyboard inputs check
  - [core_input_mouse](http://www.raylib.com/examples/web/loader.html?name=core_input_mouse) - mouse inputs check
 
 ### Lesson 04: Collision detection and resolution
+
 To check collisions between simple shapes (circle, rectangle), raylib provides the following functions:
 ```c
 bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2);                                    // Check collision between two rectangles
 bool CheckCollisionCircles(Vector2 center1, float radius1, Vector2 center2, float radius2); // Check collision between two circles
 bool CheckCollisionCircleRec(Vector2 center, float radius, Rectangle rec);                  // Check collision between circle and rectangle
 ```
-...
+Those functions return *true* if the involved rectangles/circles collide, is up to the user to resolve that collision in an appropiate way. Keep always in mind that collisions in games are always treatened as two separate parts: **detection** and **resolution**.
 
 ### Lesson 05: Textures loading and drawing
+
+Actually texture loading and drawing is a quite complex process: 
+
+First, the image file is loaded, image data is usually decompressed and decodified (.png, .jpg) to obtain a plain array of pixel data; every pixel can be interpreted with different pixel formats (8bit, 16bit, 32bit...) but usually raylib translates that data to RGBA 32Bit (4 channels - RedGrenBlueAlpha, 8bit per channel). Image data is loaded into RAM.
+
+Second, that image data must be uploaded to VRAM memory (GPU) to be used on screen rendering. 
+
+Third, when drawing a texture to screen, texture is actually pasted over a quad (two triangles structure) and processed to display on the screen; that processing occurs in a per-fragment basis... think about it like a per pixel or sub-pixel processing, placing every fragment on the final canvas.
+
+raylib provides multiple functions to deal with textures an images, depending on the intended use of the data, user can choose the right one; for example, most of the time, images will be loaded as textures to be displayed on screen but image data can also be used to generate 3d models, like in the case of [heightmaps](http://www.raylib.com/examples/web/loader.html?name=models_heightmap).
+
 To load and draw textures, raylib provides the following functions:
 ```c
 Texture2D LoadTexture(const char *fileName);       // Load an image file as texture into GPU memory
@@ -134,7 +147,6 @@ void UnloadTexture(Texture2D texture);             // Unload texture from GPU me
 
 void DrawTexture(Texture2D texture, int posX, int posY, Color tint); // Draw a texture in the canvas
 ```
-...
 
 Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
  - [textures_logo_raylib](http://www.raylib.com/examples/web/loader.html?name=textures_logo_raylib) - texture loading and drawing
@@ -142,11 +154,18 @@ Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
 
 
 ### Lesson 06: SpriteFonts loading and text drawing
+
 To draw text, raylib loads a default font on `InitWindow()`, that font is used when drawing text with:
 ```c
 void DrawText(const char *text, int posX, int posY, int fontSize, Color color);
 ```
-But raylib users can also load custom fonts, raylib support multiple fonts formats, including TTF format and BMFonts.
+But raylib users can also load custom fonts, raylib support multiple fonts formats, including TTF format and BMFonts. To load custom fonts and draw with them, use the following functions:
+```c
+SpriteFont LoadSpriteFont(const char *fileName);         // Load a SpriteFont image into GPU 
+void UnloadSpriteFont(SpriteFont spriteFont);            // Unload SpriteFont from GPU memory
+
+void DrawTextEx(SpriteFont spriteFont, const char* text, Vector2 position, int fontSize, int spacing, Color tint);
+```
 
 Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
  - [text_sprite_fonts](http://www.raylib.com/examples/web/loader.html?name=text_sprite_fonts) - sprite fonts loading and drawing

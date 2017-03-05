@@ -20,7 +20,7 @@ This game is developed using [raylib](http://www.raylib.com/) library.
  - Fonts loading and text drawing
  - Sounds loading and playing
 
-*animated gif*
+*TODO: add animated gif*
 
 ## Challenge 02. Dungeon 2D game
 
@@ -37,7 +37,7 @@ This game is developed using raylib [rlgl](https://github.com/raysan5/raylib/blo
  - Tile map data loading from a text file
  - Sprites based animation
 
-*animated gif*
+*TODO: add animated gif*
 
 
 ## Challenge 03. Maze 3D game
@@ -57,10 +57,10 @@ This game is developed using [OpenGL](https://en.wikipedia.org/wiki/OpenGL) grap
  - Camera system creation and management (1st person)
  - AABB collision detection and resolution
 
-*animated gif*
+*TODO: add animated gif*
 
 # License
 
 All challenges and solutions are licensed under MIT License. Check [LICENSE](LICENSE) for further details.
 
-Copyright (c) 2017 Ramon Santamaria ([@raysan5](https://twitter.com/raysan5))
+*Copyright (c) 2017 Ramon Santamaria ([@raysan5](https://twitter.com/raysan5))*

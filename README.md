@@ -1,5 +1,5 @@
 # Graphics Programming
-This repo contains some challenges for the Graphics Programming subject of the MSc in Videogames Design and Development of UOC (Open University of Catalonia). Challenges are organized in folders and include the solutions. They are intended to be used as tutorials to learn graphics programming for videogames development.
+This repo contains some challenges about Graphics Programming. Challenges are organized in folders and include the solutions. They are intended to be used as tutorials to learn graphics programming for videogames development.
 
 Some of those challenges are based on [raylib](http://www.raylib.com/), a simple and easy-to-use library to learn videogames programming.
 

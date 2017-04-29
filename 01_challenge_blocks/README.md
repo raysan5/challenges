@@ -207,10 +207,10 @@ void StopSound(Sound sound);                // Stop playing a sound
 Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
  - [audio_sound_loading](http://www.raylib.com/examples/web/loader.html?name=audio_sound_loading) - keyboard inputs check
 
-##Getting help 
+## Getting help 
 We strongly encourage you using the online [raylib forum](forum.raylib.com) or the official [UOC forum]() to discuss challenges with other students. However, we recommend not to look at any source code written by other students or share your source code with others **while working on the challenge**.
 
-##License
+## License
 All code provided for this challenge is licensed under MIT License. Check [LICENSE](../LICENSE) for further details.
 
 *Copyright (c) 2017 Ramon Santamaria ([@raysan5](https://twitter.com/raysan5))*

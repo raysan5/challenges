@@ -1,21 +1,15 @@
 /*******************************************************************************************
 *
-*   Challenge 02:   DUNGEON GAME
-*   Lesson 01:      rlgl module intro
-*   Description:    Introduction to rlgl and immediate mode
+*   Challenge 03:   MAZE GAME
+*   Lesson 01:      OpenGL intro
+*   Description:    Introduction to OpenGL 3.3 Core profile
 *
-*   NOTE: This example requires OpenGL 3.3 or ES2 for shaders support,
-*         OpenGL 1.1 does not support shaders but it can also be used.
-*
-*   Compile rlgl module using:
-*       gcc -c rlgl.c -Wall -std=c99 -DRLGL_STANDALONE -DRAYMATH_IMPLEMENTATION -DGRAPHICS_API_OPENGL_33
-*
-*   NOTE: rlgl module requires the following header-only files:
+*   NOTE: This example requires the following header-only files:
 *       glad.h    - OpenGL extensions loader (stripped to only required extensions)
 *       raymath.h - Vector and matrix math functions
 *
 *   Compile example using:
-*       gcc -o $(NAME_PART).exe $(FILE_NAME) rlgl.o -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
+*       gcc -o $(NAME_PART).exe $(FILE_NAME) -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
 *
 *   This example has been created using raylib 1.7 (www.raylib.com)
 *   raylib is licensed under an unmodified zlib/libpng license (View raylib.h for details)
@@ -26,8 +20,12 @@
 
 #include <GLFW/glfw3.h>         // Windows/Context and inputs management
 
-#define RLGL_STANDALONE
-#include "rlgl.h"               // rlgl library: OpenGL 1.1 immediate-mode style coding
+#define GLAD_IMPLEMENTATION
+#include "glad.h"               // GLAD extensions loading library
+                                // NOTE: Includes required OpenGL headers
+
+#define RAYMATH_IMPLEMENTATION
+#include "raymath.h"            // Required for: Vector3 and Matrix functions
 
 //----------------------------------------------------------------------------------
 // Main Entry point

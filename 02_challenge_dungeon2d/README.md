@@ -17,7 +17,7 @@ It's assumed that all concepts explained in that challenge are already learn by 
  - Videogame life cycle (Init -> Update -> Draw -> DeInit)
  - Basic screens management with screens transition
  - Collision detection and resolution
- - Sounds loading and playing
+ - Sounds and music loading and playing
 
 **Learning Outcomes:**
  - rlgl functionality and possibilities
@@ -36,11 +36,11 @@ Lesson | Learning outcome | Source file | Related functions
 :-----:|------------------|:------------|:-----------------:
 [01](#lesson-01-introduction-to-rlgl-and-immediate-mode) | rlgl functionality | [01_dungeon_game_intro.c](lessons/01_dungeon_game_intro.c) | -
 [02](#lesson-02-windows-creation-and-management) | window creation and management | [02_dungeon_game_window.c](lessons/02_dungeon_game_window.c) | InitWindow(), CloseWindow(), <br>InitGraphicDevice()
-[03](#lesson-03-inputs-management-keyboard-mouse) | .. | 03_dungeon_game_inputs.c | IsKeyDown(), IsKeyPressed()
-[04](#lesson-04-basic-shapes-drawing-with-vertex-data) | .. | 04_dungeon_game_shapes.c | DrawTriangle(), DrawLine(), DrawRectangle()
-[05](#lesson-05-image-files-loading-and-texture-creation) | .. | 05_dungeon_game_textures.c | LoadImage(), LoadTexture(), LoadBMP()
-[06](#lesson-06-tilemap-data-loading-and-usage) | .. | 06_dungeon_game_tiles.c | LoadTilemap(), UnloadTileMap()
-[07](#lesson-07-sprites-based-animation) | .. | 07_dungeon_game_sprites.c | UpdateAnimation()
+[03](#lesson-03-inputs-management-keyboard-mouse) | input management | [03_dungeon_game_inputs.c](lessons/03_dungeon_game_inputs.c) | IsKeyDown(), IsKeyPressed()
+[04](#lesson-04-basic-shapes-drawing-with-vertex-data) | basic shapes definition | [04_dungeon_game_shapes.c](lessons/04_dungeon_game_shapes.c) | DrawLine(), DrawTriangle(), DrawRectangle()
+[05](#lesson-05-image-files-loading-and-texture-creation) | image data loading, texture creation and drawing | [05_dungeon_game_textures.c](lessosn/05_dungeon_game_textures.c) | LoadImage(), UnloadImage(), <br>LoadTexture(), UnloadTexture(), LoadBMP()
+[06](#lesson-06-tilemap-data-loading-and-usage) | tilemap data loading | [06_dungeon_game_tiles.c](lessons/06_dungeon_game_tiles.c) | LoadTilemap(), UnloadTileMap()
+[07](#lesson-07-sprites-based-animation) | sprites animation | [07_dungeon_game_sprites.c](lessons/07_dungeon_game_sprites.c) | LoadSprite(), UnloadSprite(), UpdateSprite(), DrawSprite()
 
 **NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments, in the form of *TODO* points for every task to be completed. Read carefully those comments to understand every task and how implement the proposed solutions.
 
@@ -67,6 +67,8 @@ void InitGraphicsDevice(int screenWidth, int screenHeight); // Initialize graphi
 
 ### Lesson 03: Inputs management (keyboard-mouse-gamepad) with GLFW3
 
+*Lesson code file to review: [03_dungeon_game_inputs.c](lessons/03_dungeon_game_inputs.c)*
+
 Read user inputs (keyboard-mouse) using GLFW3 library.
 
 Functions to be implemented:
@@ -81,6 +83,8 @@ Vector2 GetMousePosition(void);                         // Returns mouse positio
 
 ### Lesson 04: Basic shapes creation and drawing
 
+*Lesson code file to review: [04_dungeon_game_shapes.c](lessons/04_dungeon_game_shapes.c)*
+
 Define basic shapes by vertex using immediate mode.
 
 Functions to be implemented:
@@ -91,6 +95,8 @@ void DrawRectangle(int posX, int posY, int width, int height, Color color);
 ```
 
 ### Lesson 05: Image files loading and texture creation
+
+*Lesson code file to review: [05_dungeon_game_textures.c](lessosn/05_dungeon_game_textures.c)*
 
 Load image data from a BMP file, decodifying information if required, convert that image data to a texture (GPU uploading) and leran to draw that texture on the canvas.
 
@@ -105,6 +111,8 @@ void DrawTexture(Texture2D texture, int posX, int posY, Color tint);
 
 ### Lesson 06: Tilemap data loading and usage
 
+*Lesson code file to review: [06_dungeon_game_tiles.c](lessons/06_dungeon_game_tiles.c)*
+
 Load tilemap data from different file sources, from a simple text file to an image pixel data.
 
 Functions to be implemented:
@@ -115,6 +123,8 @@ void DrawTileMap(TileMap);
 ```
 
 ### Lesson 07: Spritesheet based animations
+
+*Lesson code file to review: [07_dungeon_game_sprites.c](lessons/07_dungeon_game_sprites.c)*
 
 Functions to be implemented:
 ```c

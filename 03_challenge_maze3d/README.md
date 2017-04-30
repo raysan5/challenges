@@ -20,13 +20,12 @@ It's assumed that all concepts explained in those challenges are already learn b
  - Videogame life cycle (Init -> Update -> Draw -> DeInit)
  - Basic screens management with screens transition
  - Collision detection and resolution
- - Sounds loading and playing
- - Window creation, configuration and management (GLFW3)
- - Keyboard and mouse inputs management (GLFW3)
- - Image files loading (RAM and VRAM) and drawing
+ - Sounds and music loading and playing
+ - Image files loading (RAM and VRAM)
 
 **Learning Outcomes:**
  - OpenGL 3.3 graphic pipeline functionality (basic shader)
+ - Window creation, configuration and management (GLFW3)
  - Context creation (OpenGL 3.3) and extensions loading (GLAD)
  - Inputs management (keyboard, mouse, gamepad) (GLFW3)
  - Textures loading (VRAM) and drawing on screen
@@ -41,27 +40,40 @@ It's assumed that all concepts explained in those challenges are already learn b
 
 Lesson | Learning outcome | Source file | Related functions
 :-----:|------------------|:------------|:-----------------:
-[01](#lesson-01-introduction-to-raylib-and-videogames-programming) | raylib functionality, <br>videogame lyfe cycle, <br>basic screens management | [01_blocks_game_intro.c](lessons/01_blocks_game_intro.c) | InitWindow(), CloseWindow(), <br>BeginDrawing(), EndDrawing()
+[01](#lesson-01-introduction-to-opengl) | opengl functionality, <br>window and context creation, <br>extensions loading | [01_maze_game_intro.c](lessons/01_maze_game_intro.c) | InitWindow(), CloseWindow(), <br>BeginDrawing(), EndDrawing()
+[02](#lesson-02-input-management) | ... | [02_maze_game_inputs.c](lessons/02_maze_game_inputs.c) | ...
+[03](#lesson-03-textures-loading) | ... | [03_maze_game_textures.c](lessons/03_maze_game_textures.c) | ...
+[04](#lesson-04-cubicmap-loading) | ... | [04_maze_game_cubicmap.c](lessons/04_maze_game_cubicmap.c) | ...
+[05](#lesson-05-camera-first-person) | ... | [05_maze_game_camera.c](lessons/05_maze_game_camera.c) | ...
+[06](#lesson-06-collisions) | ... | [06_maze_game_collisions.c](lessons/06_maze_game_collisions.c) | ...
+[07](#lesson-07-models-loading) | ... | [07_maze_game_models.c](lessons/07_maze_game_models.c) | ...
 
 **NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments, in the form of *TODO* points for every task to be completed. Read carefully those comments to understand every task and how implement the proposed solutions.
 
-### Lesson 01: Introduction to modern OpenGL graphic pipeline
+### Lesson 01: Introduction to OpenGL
 
-*Lesson code file to review: [01_blocks_game_intro.c](lessons/01_blocks_game_intro.c)*
+*Lesson code file to review: [01_maze_game_intro.c](lessons/01_maze_game_intro.c)*
 
+Introduction to modern OpenGL graphic pipeline
 In this first lesson we will introduce raylib library and videogames programming principles. We will setup raylib and take a look to its functionality; we will see how videogame life cycle works and we will implement a basic screens management system for our game.
 
 Learn modern OpenGL 3.3 functionality, understand graphic pipeline and programmable shaders.
 
-### Lesson 02: Context creation and inputs management
+### Lesson 02: Inputs management
+
+*Lesson code file to review: [02_maze_game_inputs.c](lessons/02_maze_game_inputs.c)*
 
 Read user inputs (keyboard-mouse-gamepad) using GLFW3 library.
 
 ### Lesson 03: Textures loading (VRAM) and drawing on screen
 
+*Lesson code file to review: [03_maze_game_textures.c](lessons/03_maze_game_textures.c)*
+
 Load image data from a file, decodifying information if required, convert that image data to a texture (GPU uploading) and leran to draw that texture on the canvas.
 
 ### Lesson 04: Level map data loading and vertex buffers generation (VBO)
+
+*Lesson code file to review: [04_maze_game_cubicmap.c](lessons/04_maze_game_cubicmap.c)*
 
 Load cubicmap from image file data, generate 3D mesh for the map (vertex data) and screen drawing.
 
@@ -73,6 +85,8 @@ void DrawCubicmap(Cubicmap map);
 
 ### Lesson 05: Camera system creation and management (1st person)
 
+*Lesson code file to review: [05_maze_game_camera.c](lessons/05_maze_game_camera.c)*
+
 Manage camera system and implement first person view.
 
 Functions to be implemented:
@@ -82,6 +96,8 @@ void UpdateCamera(Camera *camera);
 
 ### Lesson 06: AABB collision detection and resolution
 
+*Lesson code file to review: [06_maze_game_collisions.c](lessons/06_maze_game_collisions.c)*
+
 Implement 3D collision system based on cubemap.
 
 Functions to be implemented:
@@ -90,6 +106,8 @@ bool CheckCollisionCubicmap(void);
 ```
 
 ### Lesson 07: Models loading, transform and drawing (3d meshes)
+
+*Lesson code file to review: [07_maze_game_models.c](lessons/07_maze_game_models.c)*
 
 Support OBJ fileformat 3D models loading, simple mesh loading and scene placement.
 

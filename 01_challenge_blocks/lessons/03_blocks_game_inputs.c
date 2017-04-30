@@ -1,7 +1,7 @@
 /*******************************************************************************************
 *
 *   Challenge 01:   BLOCKS GAME
-*   Lesson 02:      inputs management
+*   Lesson 03:      inputs management
 *   Description:    Read user inputs (keyboard, mouse)
 *
 *   Compile example using:

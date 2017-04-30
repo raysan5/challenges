@@ -18,7 +18,7 @@ This game is developed using [raylib](http://www.raylib.com/) library.
  - Collision detection and resolution
  - Textures loading and drawing
  - Fonts loading and text drawing
- - Sounds loading and playing
+ - Sounds and music loading and playing
 
 *TODO: add animated gif*
 
@@ -31,7 +31,7 @@ This game is developed using raylib [rlgl](https://github.com/raysan5/raylib/blo
 **Learning outcomes:**
  - rlgl functionality and possibilities
  - Window creation, configuration and management (GLFW3)
- - Keyboard and mouse inputs management (GLFW3)
+ - Inputs management (keyboard, mouse) (GLFW3)
  - Basic shaped drawing defining vertex data (immediate-mode)
  - Image files loading (RAM and VRAM) and drawing
  - Tile map data loading from a text file
@@ -46,15 +46,15 @@ A cubes-based maze 3D game where player has to escape from a 3D labyrinth.
 This game is developed using [OpenGL](https://en.wikipedia.org/wiki/OpenGL) graphics library.
 
 **Learning outcomes:**
- - OpenGL 3.3 graphic pipeline functionality (basic shader)
+ - OpenGL 3.3 graphic pipeline functionality
  - Window creation, configuration and management (GLFW3)
  - Context creation (OpenGL 3.3) and extensions loading (GLAD)
  - Inputs management (keyboard, mouse, gamepad) (GLFW3)
- - Image files loading (RAM and VRAM) and drawing on screen
+ - Textures loading (VRAM) and drawing
  - Level map data loading and vertex buffers generation (VBO)
- - Models loading, transform and drawing (3d meshes)
  - Camera system creation and management (1st person)
  - AABB collision detection and resolution
+ - Models loading, transform and drawing (3d meshes)
 
 *TODO: add animated gif*
 

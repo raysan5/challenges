@@ -1,8 +1,11 @@
 /*******************************************************************************************
 *
-*   Challenge 01: BLOCKS GAME - raylib intro
+*   Challenge 01:   BLOCKS GAME
+*   Lesson 07:      audio
+*   Description:    Sounds and music loading and playing
 *
-*   Introduction to raylib and the basic videogames life cycle
+*   Compile example using:
+*       gcc -o $(NAME_PART).exe $(FILE_NAME) -lraylib -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
 *
 *   This example has been created using raylib 1.7 (www.raylib.com)
 *   raylib is licensed under an unmodified zlib/libpng license (View raylib.h for details)

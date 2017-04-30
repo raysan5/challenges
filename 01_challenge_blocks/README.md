@@ -17,7 +17,7 @@ This game is developed using [raylib](http://www.raylib.com/), a simple and easy
  - Collision detection and resolution
  - Textures loading and drawing
  - Fonts loading and text drawing
- - Sounds loading and playing
+ - Sounds and music loading and playing
  
 **NOTE:** All code provided is in C language for simplicity and clearness but it's up to the student to use more complex C++ code structures (OOP) if desired.
 

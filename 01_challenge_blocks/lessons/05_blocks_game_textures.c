@@ -1,11 +1,8 @@
 /*******************************************************************************************
 *
-*   Challenge 01:   BLOCKS GAME
-*   Lesson 02:      inputs management
-*   Description:    Read user inputs (keyboard, mouse)
+*   Challenge 01: BLOCKS GAME - raylib intro
 *
-*   Compile example using:
-*       gcc -o $(NAME_PART).exe $(FILE_NAME) -lraylib -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
+*   Introduction to raylib and the basic videogames life cycle
 *
 *   This example has been created using raylib 1.7 (www.raylib.com)
 *   raylib is licensed under an unmodified zlib/libpng license (View raylib.h for details)

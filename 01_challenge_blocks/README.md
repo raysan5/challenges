@@ -6,7 +6,7 @@
 ## Introduction
 In this challenge we will implement a Blocks game similar to the well-known game [Arkanoid](https://en.wikipedia.org/wiki/Arkanoid) (Taito, 1986). Along this process we will learn how the videogames life cycle works, how to manage the window and player inputs, and how to draw some graphics on screen.
 
-**NOTE:** All code provided is in C language for simplicity and clearness but it's up to the student to use more complex C++ code structures (OOP) if desired.
+This game is developed using [raylib](http://www.raylib.com/), a simple and easy-to-use library to learn videogames programming.
 
 **Learning Outcomes:**
  - raylib functionality and possibilities
@@ -19,7 +19,7 @@ In this challenge we will implement a Blocks game similar to the well-known game
  - Fonts loading and text drawing
  - Sounds loading and playing
  
-This game is developed using [raylib](http://www.raylib.com/), a simple and easy-to-use library to learn videogames programming.
+**NOTE:** All code provided is in C language for simplicity and clearness but it's up to the student to use more complex C++ code structures (OOP) if desired.
 
 ## Lessons Summary
 
@@ -27,7 +27,7 @@ Lesson | Learning outcome | Source file | Related functions
 :-----:|------------------|:------------|:-----------------:
 [01](#lesson-01-introduction-to-raylib-and-videogames-programming) | raylib functionality, <br>videogame lyfe cycle, <br>basic screens management | [01_blocks_game_intro.c](lessons/01_blocks_game_intro.c) | InitWindow(), CloseWindow(), <br>BeginDrawing(), EndDrawing()
 [02](#lesson-02-draw-basic-shapes-circle-rectangle) | draw basic shapes (circle, rectangle) | [02_blocks_game_drawing.c](lessons/02_blocks_game_drawing.c) | DrawRectangle(), DrawCircle()
-[03](#lesson-03-inputs-management-keyboard-mouse) | inputs management | [03_blocks_game_inputs.c](lessons/03_blocks_game_inputs.c) | IsKeyPressed(), IsKeyDown(), <br>IsMouseButtonPressed(), IsMouseButtonDown(), <br>GetMouseX(), GetMouseY()
+[03](#lesson-03-inputs-management-keyboard-mouse) | inputs management | [03_blocks_game_inputs.c](lessons/03_blocks_game_inputs.c) | IsKeyPressed(), IsKeyDown(), <br>IsMouseButtonPressed(), <br>IsMouseButtonDown(), <br>GetMouseX(), GetMouseY()
 [04](#lesson-04-collision-detection-and-resolution) | collision detection and resolution | [04_blocks_game_collisions.c](lessons/04_blocks_game_collisions.c) | CheckCollisionCircleRec(), <br>CheckCollisionRecs(), <br>CheckCollisionCircles()
 [05](#lesson-05-textures-loading-and-drawing) | textures loading and drawing | [05_blocks_game_textures.c](lessons/05_blocks_game_textures.c) | LoadTexture(), UnloadTexture(), <br>DrawTexture()
 [06](#lesson-06-spritefonts-loading-and-text-drawing) | fonts loading and text drawing | [06_blocks_game_text.c](lessons/06_blocks_game_text.c) | LoadSpriteFont(), UnloadSpriteFont(), <br>DrawText(), DrawTextEx()
@@ -208,7 +208,7 @@ Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
  - [audio_sound_loading](http://www.raylib.com/examples/web/loader.html?name=audio_sound_loading) - keyboard inputs check
 
 ## Getting help 
-We strongly encourage you using the online [raylib forum](forum.raylib.com) or the official [UOC forum]() to discuss challenges with other students. However, we recommend not to look at any source code written by other students or share your source code with others **while working on the challenge**.
+We strongly encourage you using the online [raylib forum](forum.raylib.com) to discuss challenges with other students. However, we recommend not to look at any source code written by other students or share your source code with others **while working on the challenge**.
 
 ## License
 All code provided for this challenge is licensed under MIT License. Check [LICENSE](../LICENSE) for further details.

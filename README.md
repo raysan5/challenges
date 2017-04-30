@@ -39,10 +39,9 @@ This game is developed using raylib [rlgl](https://github.com/raysan5/raylib/blo
 
 *TODO: add animated gif*
 
-
 ## Challenge 03. Maze 3D game
 
-A cubes-based maze 3D game where player has to escape from a 3D laberythn.
+A cubes-based maze 3D game where player has to escape from a 3D labyrinth.
 
 This game is developed using [OpenGL](https://en.wikipedia.org/wiki/OpenGL) graphics library.
 

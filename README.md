@@ -3,7 +3,7 @@ This repo contains some challenges about Graphics Programming. Challenges are or
 
 Some of those challenges are based on [raylib](http://www.raylib.com/), a simple and easy-to-use library to learn videogames programming.
 
-## Challenge 01. Blocks game
+## [Challenge 01. Blocks game](01_challenge_blocks#challenge-01-blocks-game)
 
 A blocks game where player has to break a wall of blocks controlling a ball with a paddle.
 
@@ -22,7 +22,7 @@ This game is developed using [raylib](http://www.raylib.com/) library.
 
 *TODO: add animated gif*
 
-## Challenge 02. Dungeon 2D game
+## [Challenge 02. Dungeon 2D game](02_challenge_dungeon2d#challenge-02-2d-dungeon-game)
 
 A tile-based dungeon 2D game where player moves around a 2D dungeon finding keys and defeating monsters.
 
@@ -39,7 +39,7 @@ This game is developed using raylib [rlgl](https://github.com/raysan5/raylib/blo
 
 *TODO: add animated gif*
 
-## Challenge 03. Maze 3D game
+## [Challenge 03. Maze 3D game](03_challenge_maze3d#challenge-03-3d-maze-game)
 
 A cubes-based maze 3D game where player has to escape from a 3D labyrinth.
 

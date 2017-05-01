@@ -31,7 +31,7 @@ Lesson | Learning outcome | Source file | Related functions
 [04](#lesson-04-collision-detection-and-resolution) | collision detection and resolution | [04_blocks_game_collisions.c](lessons/04_blocks_game_collisions.c) | CheckCollisionCircleRec(), <br>CheckCollisionRecs(), <br>CheckCollisionCircles()
 [05](#lesson-05-textures-loading-and-drawing) | textures loading and drawing | [05_blocks_game_textures.c](lessons/05_blocks_game_textures.c) | LoadTexture(), UnloadTexture(), <br>DrawTexture()
 [06](#lesson-06-spritefonts-loading-and-text-drawing) | fonts loading and text drawing | [06_blocks_game_text.c](lessons/06_blocks_game_text.c) | LoadSpriteFont(), UnloadSpriteFont(), <br>DrawText(), DrawTextEx()
-[07](#lesson-07-sounds-loading-and-playing) | sounds loading and playing | [07_blocks_game_sounds.c](lessons/07_blocks_game_sounds.c) | InitAudioDevice(), CloseAudioDevice(), LoadSound(), UnloadSound(), PlaySound()
+[07](#lesson-07-sounds-and-music-loading-and-playing) | sounds loading and playing | [07_blocks_game_audio.c](lessons/07_blocks_game_audio.c) | InitAudioDevice(), CloseAudioDevice(), LoadSound(), UnloadSound(), PlaySound()
 
 **NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments, in the form of *TODO* points for every task to be completed. Read carefully those comments to understand every task and how implement the proposed solutions.
 
@@ -76,7 +76,7 @@ The following diagram shows this life cycle, the related processes for every par
 *TODO: Add info on screen management*
 
 Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
- - [core_basic_window](http://www.raylib.com/examples/web/loader.html?name=core_basic_window) - simple code showing a videogame life cycle
+ - [core_basic_window](http://www.raylib.com/examples/web/core/loader.html?name=core_basic_window) - simple code showing a videogame life cycle
  - [basic_game template](https://github.com/raysan5/raylib/blob/develop/templates/basic_game/basic_game.c) - basic screens management structure
 
 ### Lesson 02: Draw basic shapes (circle, rectangle)
@@ -95,9 +95,8 @@ void DrawRectangleLines(int posX, int posY, int width, int height, Color color);
 Most of those functions are self explanatory, they must be called in the draw part of the game loop, between `BeginDrawing()` and `EndDrawing()`. User needs to provide the drawing position (x, y), size and color. Just note that in case of rectangle-shapes drawing origin is upper-left corner while drawing circle-shapes origin is set in the center of the circle.
 
 Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
- - [shapes_basic_shapes](http://www.raylib.com/examples/web/loader.html?name=shapes_basic_shapes) - basic shapes drawing
- - [shapes_logo_raylib](http://www.raylib.com/examples/web/loader.html?name=shapes_logo_raylib) - raylib logo drawn using shapes
- 
+ - [shapes_basic_shapes](http://www.raylib.com/examples/web/shapes/loader.html?name=shapes_basic_shapes) - basic shapes drawing
+ - [shapes_logo_raylib](http://www.raylib.com/examples/web/shapes/loader.html?name=shapes_logo_raylib) - raylib logo drawn using shapes
 
 ### Lesson 03: Inputs management (keyboard, mouse)
 
@@ -121,8 +120,8 @@ Vector2 GetMousePosition(void);           // Returns mouse position XY
 This set of functions can be used in the `update` part of the game loop to check **if** one key or button has been pressed (or is being pressed in that frame).  
 
 Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
- - [core_input_keys](http://www.raylib.com/examples/web/loader.html?name=core_input_keys) - keyboard inputs check
- - [core_input_mouse](http://www.raylib.com/examples/web/loader.html?name=core_input_mouse) - mouse inputs check
+ - [core_input_keys](http://www.raylib.com/examples/web/core/loader.html?name=core_input_keys) - keyboard inputs check
+ - [core_input_mouse](http://www.raylib.com/examples/web/core/loader.html?name=core_input_mouse) - mouse inputs check
 
 ### Lesson 04: Collision detection and resolution
 
@@ -159,8 +158,8 @@ void DrawTexture(Texture2D texture, int posX, int posY, Color tint); // Draw a t
 ```
 
 Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
- - [textures_logo_raylib](http://www.raylib.com/examples/web/loader.html?name=textures_logo_raylib) - texture loading and drawing
- - [textures_rectangle](http://www.raylib.com/examples/web/loader.html?name=textures_rectangle) - texture loading and piece drawing
+ - [textures_logo_raylib](http://www.raylib.com/examples/web/textures/loader.html?name=textures_logo_raylib) - texture loading and drawing
+ - [textures_rectangle](http://www.raylib.com/examples/web/textures/loader.html?name=textures_rectangle) - texture loading and piece drawing
 
 
 ### Lesson 06: SpriteFonts loading and text drawing
@@ -180,19 +179,19 @@ void DrawTextEx(SpriteFont spriteFont, const char* text, Vector2 position, int f
 ```
 
 Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
- - [text_sprite_fonts](http://www.raylib.com/examples/web/loader.html?name=text_sprite_fonts) - sprite fonts loading and drawing
- - [text_bmfonts_ttf](http://www.raylib.com/examples/web/loader.html?name=text_bmfont_ttf) - bmfonts and ttf fonts loading
- - [text_writing_anim](http://www.raylib.com/examples/web/loader.html?name=text_writing_anim) - text writting animation effect
+ - [text_sprite_fonts](http://www.raylib.com/examples/web/text/loader.html?name=text_sprite_fonts) - sprite fonts loading and drawing
+ - [text_bmfonts_ttf](http://www.raylib.com/examples/web/text/loader.html?name=text_bmfont_ttf) - bmfonts and ttf fonts loading
+ - [text_writing_anim](http://www.raylib.com/examples/web/text/loader.html?name=text_writing_anim) - text writting animation effect
 
 
-### Lesson 07: Sounds loading and playing
+### Lesson 07: Sounds and music loading and playing
 
 *Lesson code file to review: [07_blocks_game_sounds.c](lessons/07_blocks_game_sounds.c)*
 
 To deal with audio on raylib, first of all, audio device must be initialized. To manage audio device, use the following functions:
 ```c
-void InitAudioDevice(void);                  // Initialize audio device and context
-void CloseAudioDevice(void);                 // Close the audio device and context (and music stream)
+void InitAudioDevice(void);                 // Initialize audio device and context
+void CloseAudioDevice(void);                // Close the audio device and context (and music stream)
 ```
 To load and play sounds, raylib provides the following functions:
 ```c
@@ -204,9 +203,22 @@ void PauseSound(Sound sound);               // Pause a sound
 void ResumeSound(Sound sound);              // Resume a paused sound
 void StopSound(Sound sound);                // Stop playing a sound
 ```
-Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
- - [audio_sound_loading](http://www.raylib.com/examples/web/loader.html?name=audio_sound_loading) - keyboard inputs check
+To load and stream music, raylib provides the following functions:
+```c
+Music LoadMusicStream(const char *fileName);    // Load music stream from file
+void UnloadMusicStream(Music music);            // Unload music stream
 
+void UpdateMusicStream(Music music);            // Update buffers for music streaming
+void PlayMusicStream(Music music);              // Start music playing
+void PauseMusicStream(Music music);             // Pause music playing
+void ResumeMusicStream(Music music);            // Resume playing paused music
+void StopMusicStream(Music music);              // Stop music playing
+```
+
+Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
+ - [audio_sound_loading](http://www.raylib.com/examples/web/audio/loader.html?name=audio_sound_loading) - sounds loading and playing
+ - [audio_music_stream](http://www.raylib.com/examples/web/audio/loader.html?name=audio_music_stream) - music loading and streaming
+ 
 ## Getting help 
 We strongly encourage you using the online [raylib forum](forum.raylib.com) to discuss challenges with other students. However, we recommend not to look at any source code written by other students or share your source code with others **while working on the challenge**.
 

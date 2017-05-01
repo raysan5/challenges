@@ -62,7 +62,6 @@ Functions to be implemented:
 ```c
 void InitWindow(int screenWidth, int screenHeight);         // Initialize window using GLFW3
 void CloseWindow(void);                                     // Close window
-void InitGraphicsDevice(int screenWidth, int screenHeight); // Initialize graphics device context
 ```
 
 ### Lesson 03: Inputs management
@@ -89,8 +88,8 @@ Define basic shapes by vertex using immediate mode.
 
 Functions to be implemented:
 ```c
-void DrawLineV(Vector2 startPos, Vector2 endPos, Color color);
-void DrawCircleV(Vector2 center, float radius, Color color);
+void DrawLine(Vector2 startPos, Vector2 endPos, Color color);
+void DrawCircle(Vector2 center, float radius, Color color);
 void DrawRectangle(int posX, int posY, int width, int height, Color color);
 ```
 
@@ -119,7 +118,7 @@ Functions to be implemented:
 ```c
 TileMap LoadTileMap(const char *fileName);
 void UnloadTileMap(TileMap map);
-void DrawTileMap(TileMap);
+void DrawTileMap(TileMap map);
 ```
 
 ### Lesson 07: Sprites animation

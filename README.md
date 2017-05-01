@@ -20,7 +20,7 @@ This game is developed using [raylib](http://www.raylib.com/) library.
  - Fonts loading and text drawing
  - Sounds and music loading and playing
 
-*TODO: add animated gif*
+*TODO: add animated gif of expected result*
 
 ## [Challenge 02. Dungeon 2D game](02_challenge_dungeon2d#challenge-02-2d-dungeon-game)
 
@@ -33,11 +33,11 @@ This game is developed using raylib [rlgl](https://github.com/raysan5/raylib/blo
  - Window creation, configuration and management (GLFW3)
  - Inputs management (keyboard, mouse) (GLFW3)
  - Basic shaped drawing defining vertex data (immediate-mode)
- - Image files loading (RAM and VRAM) and drawing
- - Tile map data loading from a text file
+ - Image loading (RAM), texture creation (VRAM) and drawing
+ - Tile map data loading from text file
  - Sprites based animation
 
-*TODO: add animated gif*
+*TODO: add animated gif of expected result*
 
 ## [Challenge 03. Maze 3D game](03_challenge_maze3d#challenge-03-3d-maze-game)
 
@@ -50,13 +50,13 @@ This game is developed using [OpenGL](https://en.wikipedia.org/wiki/OpenGL) grap
  - Window creation, configuration and management (GLFW3)
  - Context creation (OpenGL 3.3) and extensions loading (GLAD)
  - Inputs management (keyboard, mouse, gamepad) (GLFW3)
- - Textures loading (VRAM) and drawing
+ - Image loading (RAM), texture creation (VRAM) and drawing
  - Level map data loading and vertex buffers generation (VBO)
  - Camera system creation and management (1st person)
- - AABB collision detection and resolution
+ - Collision detection and resolution (AABB collisions)
  - Models loading, transform and drawing (3d meshes)
 
-*TODO: add animated gif*
+*TODO: add animated gif of expected result*
 
 # License
 

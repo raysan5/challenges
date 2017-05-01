@@ -8,10 +8,10 @@ In this challenge we will implement a 2D Dungeons game similar to the dungeons o
 
 This game is developed using [rlgl](), a [raylib](http://www.raylib.com/) auxiliar module intended to simplify low level GPU access and teach basic principles of graphics programming like vertex buffers usage, textures binding, shaders usage...
 
-Before starting with this challenge, it's recommended to have completed the previous challenge: 
+Before starting with this challenge, it's recommended to complete the previous challenge: 
  - [Challenge 01: Blocks game](../01_challenge_blocks) - A blocks game where player has to break a wall of blocks controlling a ball with a paddle.
  
-It's assumed that all concepts explained in that challenge are already learn by student.
+It's assumed that all concepts explained in that challenge have already been learnt by student.
 
 **Previous knowledge required:**
  - Videogame life cycle (Init -> Update -> Draw -> DeInit)
@@ -22,10 +22,10 @@ It's assumed that all concepts explained in that challenge are already learn by 
 **Learning Outcomes:**
  - rlgl functionality and possibilities
  - Window creation, configuration and management (GLFW3)
- - Keyboard and mouse inputs management (GLFW3)
+ - Inputs management (keyboard, mouse) (GLFW3)
  - Basic shaped drawing defining vertex data (immediate-mode)
- - Image files loading (RAM and VRAM) and drawing
- - Tile map data loading from a text file
+ - Image loading (RAM), texture creation (VRAM) and drawing
+ - Tile map data loading from text file
  - Sprites based animation
  
 **NOTE:** All code provided is in C language for simplicity and clearness but it's up to the student to use more complex C++ code structures (OOP) if desired.
@@ -34,17 +34,17 @@ It's assumed that all concepts explained in that challenge are already learn by 
 
 Lesson | Learning outcome | Source file | Related functions
 :-----:|------------------|:------------|:-----------------:
-[01](#lesson-01-introduction-to-rlgl-and-immediate-mode) | rlgl functionality | [01_dungeon_game_intro.c](lessons/01_dungeon_game_intro.c) | -
-[02](#lesson-02-windows-creation-and-management) | window creation and management | [02_dungeon_game_window.c](lessons/02_dungeon_game_window.c) | InitWindow(), CloseWindow(), <br>InitGraphicDevice()
-[03](#lesson-03-inputs-management-keyboard-mouse) | input management | [03_dungeon_game_inputs.c](lessons/03_dungeon_game_inputs.c) | IsKeyDown(), IsKeyPressed()
-[04](#lesson-04-basic-shapes-drawing-with-vertex-data) | basic shapes definition | [04_dungeon_game_shapes.c](lessons/04_dungeon_game_shapes.c) | DrawLine(), DrawTriangle(), DrawRectangle()
-[05](#lesson-05-image-files-loading-and-texture-creation) | image data loading, texture creation and drawing | [05_dungeon_game_textures.c](lessosn/05_dungeon_game_textures.c) | LoadImage(), UnloadImage(), <br>LoadTexture(), UnloadTexture(), LoadBMP()
-[06](#lesson-06-tilemap-data-loading-and-usage) | tilemap data loading | [06_dungeon_game_tiles.c](lessons/06_dungeon_game_tiles.c) | LoadTilemap(), UnloadTileMap()
-[07](#lesson-07-sprites-based-animation) | sprites animation | [07_dungeon_game_sprites.c](lessons/07_dungeon_game_sprites.c) | LoadSprite(), UnloadSprite(), UpdateSprite(), DrawSprite()
+[01](#lesson-01-introduction-to-rlgl) | rlgl functionality | [01_dungeon_game_intro.c](lessons/01_dungeon_game_intro.c) | -
+[02](#lesson-02-window-creation-and-management) | window creation and management | [02_dungeon_game_window.c](lessons/02_dungeon_game_window.c) | InitWindow(), <br>CloseWindow()
+[03](#lesson-03-inputs-management) | inputs management | [03_dungeon_game_inputs.c](lessons/03_dungeon_game_inputs.c) | IsKeyDown(), IsKeyPressed(), <br>IsMouseButtonPressed(), <br>GetMousePosition()
+[04](#lesson-04-basic-shapes-definition-and-drawing) | basic shapes definition | [04_dungeon_game_shapes.c](lessons/04_dungeon_game_shapes.c) | DrawLine(), DrawTriangle(), DrawRectangle()
+[05](#lesson-05-image-loading-and-texture-creation) | image data loading, texture creation and drawing | [05_dungeon_game_textures.c](lessosn/05_dungeon_game_textures.c) | LoadImage(), UnloadImage(), <br>LoadTexture(), UnloadTexture(), LoadBMP()
+[06](#lesson-06-tilemap-data-loading) | tilemap data loading | [06_dungeon_game_tilemap.c](lessons/06_dungeon_game_tilemap.c) | LoadTilemap(), UnloadTileMap()
+[07](#lesson-07-sprites-animation) | sprites animation | [07_dungeon_game_sprites.c](lessons/07_dungeon_game_sprites.c) | LoadSprite(), UnloadSprite(), UpdateSprite(), DrawSprite()
 
 **NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments, in the form of *TODO* points for every task to be completed. Read carefully those comments to understand every task and how implement the proposed solutions.
 
-### Lesson 01: Introduction to rlgl and immediate mode graphics
+### Lesson 01: Introduction to rlgl
 
 *Lesson code file to review: [01_dungeon_game_intro.c](lessons/01_dungeon_game_intro.c)*
 
@@ -52,7 +52,7 @@ In this first lesson we will introduce rlgl module library and the underlying la
 
 https://github.com/raysan5/raylib/wiki/OpenGL-Graphic-API
 
-### Lesson 02: Windows creation and management using GLFW3
+### Lesson 02: Window creation and management
 
 *Lesson code file to review: [02_dungeon_game_window.c](lessons/02_dungeon_game_window.c)*
 
@@ -65,7 +65,7 @@ void CloseWindow(void);                                     // Close window
 void InitGraphicsDevice(int screenWidth, int screenHeight); // Initialize graphics device context
 ```
 
-### Lesson 03: Inputs management (keyboard-mouse-gamepad) with GLFW3
+### Lesson 03: Inputs management
 
 *Lesson code file to review: [03_dungeon_game_inputs.c](lessons/03_dungeon_game_inputs.c)*
 
@@ -81,7 +81,7 @@ bool IsMouseButtonDown(int button);                     // Detect if a mouse but
 Vector2 GetMousePosition(void);                         // Returns mouse position XY
 ```
 
-### Lesson 04: Basic shapes creation and drawing
+### Lesson 04: Basic shapes definition and drawing
 
 *Lesson code file to review: [04_dungeon_game_shapes.c](lessons/04_dungeon_game_shapes.c)*
 
@@ -94,7 +94,7 @@ void DrawCircleV(Vector2 center, float radius, Color color);
 void DrawRectangle(int posX, int posY, int width, int height, Color color);
 ```
 
-### Lesson 05: Image files loading and texture creation
+### Lesson 05: Image loading and texture creation
 
 *Lesson code file to review: [05_dungeon_game_textures.c](lessosn/05_dungeon_game_textures.c)*
 
@@ -109,7 +109,7 @@ void UnloadTexture(Texture2D texture);
 void DrawTexture(Texture2D texture, int posX, int posY, Color tint);
 ```
 
-### Lesson 06: Tilemap data loading and usage
+### Lesson 06: Tilemap data loading
 
 *Lesson code file to review: [06_dungeon_game_tiles.c](lessons/06_dungeon_game_tiles.c)*
 
@@ -122,7 +122,7 @@ void UnloadTileMap(TileMap map);
 void DrawTileMap(TileMap);
 ```
 
-### Lesson 07: Spritesheet based animations
+### Lesson 07: Sprites animation
 
 *Lesson code file to review: [07_dungeon_game_sprites.c](lessons/07_dungeon_game_sprites.c)*
 

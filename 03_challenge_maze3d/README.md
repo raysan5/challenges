@@ -38,12 +38,12 @@ It's assumed that all concepts explained in those challenges have already been l
 Lesson | Learning outcome | Source file | Related functions
 :-----:|------------------|:------------|:-----------------:
 [01](#lesson-01-introduction-to-opengl) | opengl functionality, <br>window and context creation, <br>extensions loading | [01_maze_game_intro.c](lessons/01_maze_game_intro.c) | InitWindow(), <br>CloseWindow(), <br>InitGraphicsDevice()
-[02](#lesson-02-inputs-management) | ... | [02_maze_game_inputs.c](lessons/02_maze_game_inputs.c) | ...
-[03](#lesson-03-textures-loading) | ... | [03_maze_game_textures.c](lessons/03_maze_game_textures.c) | ...
-[04](#lesson-04-level-map-loading) | ... | [04_maze_game_cubicmap.c](lessons/04_maze_game_cubicmap.c) | ...
-[05](#lesson-05-camera-system-management-1st-person) | ... | [05_maze_game_camera.c](lessons/05_maze_game_camera.c) | ...
-[06](#lesson-06-collision-detection-and-resolution) | ... | [06_maze_game_collisions.c](lessons/06_maze_game_collisions.c) | ...
-[07](#lesson-07-models-loading) | ... | [07_maze_game_models.c](lessons/07_maze_game_models.c) | ...
+[02](#lesson-02-inputs-management) | inputs management | [02_maze_game_inputs.c](lessons/02_maze_game_inputs.c) | IsGamepadButtonPressed(), <br>GetGamepadAxisMovement()
+[03](#lesson-03-textures-loading) | image loading, <br>texture creation and drawing | [03_maze_game_textures.c](lessons/03_maze_game_textures.c) | LoadImage(), LoadTexture()
+[04](#lesson-04-level-map-loading) | level map loading, <br>vertex buffers creation | [04_maze_game_cubicmap.c](lessons/04_maze_game_cubicmap.c) | LoadCubicmap(), <br>UnloadCubicmap(), <br>DrawCubicmap()
+[05](#lesson-05-camera-system-management-1st-person) | 1st person camera creation | [05_maze_game_camera.c](lessons/05_maze_game_camera.c) | UpdateCamera()
+[06](#lesson-06-collision-detection-and-resolution) | collision detection and resolution | [06_maze_game_collisions.c](lessons/06_maze_game_collisions.c) | CheckCollisionCubicmap()
+[07](#lesson-07-models-loading) | models loading and drawing | [07_maze_game_models.c](lessons/07_maze_game_models.c) | LoadModel(), UnloadModel(), <br>DrawModel()
 
 **NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments, in the form of *TODO* points for every task to be completed. Read carefully those comments to understand every task and how implement the proposed solutions.
 
@@ -56,17 +56,40 @@ In this first lesson we will introduce raylib library and videogames programming
 
 Learn modern OpenGL 3.3 functionality, understand graphic pipeline and programmable shaders.
 
+Functions to be implemented:
+```c
+void InitWindow(int screenWidth, int screenHeight);         // Initialize window using GLFW3
+void CloseWindow(void);                                     // Close window
+void InitGraphicsDevice(int screenWidth, int screenHeight); // Initialize graphics device context
+```
+
 ### Lesson 02: Inputs management
 
 *Lesson code file to review: [02_maze_game_inputs.c](lessons/02_maze_game_inputs.c)*
 
 Read user inputs (keyboard-mouse-gamepad) using GLFW3 library.
 
+Functions to be implemented:
+```c
+bool IsGamepadButtonPressed(int gamepad, int button);      // Detect if a gamepad button has been pressed once
+int GetGamepadAxisCount(int gamepad);                      // Return gamepad axis count for a gamepad
+float GetGamepadAxisMovement(int gamepad, int axis);       // Return axis movement value for a gamepad axis
+```
+
 ### Lesson 03: Textures loading
 
 *Lesson code file to review: [03_maze_game_textures.c](lessons/03_maze_game_textures.c)*
 
 Load image data from a file, decodifying information if required, convert that image data to a texture (GPU uploading) and leran to draw that texture on the canvas.
+
+Functions to be implemented:
+```c
+Image LoadImage(const char *fileName);
+void UnloadImage(Image image);
+Texture2D LoadTextureFromImage(Image image);
+void UnloadTexture(Texture2D texture);
+void DrawTexture(Texture2D texture, int posX, int posY, Color tint);
+```
 
 ### Lesson 04: Level map loading
 
@@ -76,7 +99,8 @@ Load cubicmap from image file data, generate 3D mesh for the map (vertex data) a
 
 Functions to be implemented:
 ```c
-LoadCubicmap(), UnloadCubicmap()
+Cubicmap LoadCubicmap(const char *fileName), 
+void UnloadCubicmap(Cubicmap map)
 void DrawCubicmap(Cubicmap map);
 ```
 
@@ -99,7 +123,7 @@ Implement 3D collision system based on cubemap.
 
 Functions to be implemented:
 ```c
-bool CheckCollisionCubicmap(void);
+bool CheckCollisionCubicmap(Cubicmap map, Vector3 position, float radius);
 ```
 
 ### Lesson 07: Models loading
@@ -107,6 +131,13 @@ bool CheckCollisionCubicmap(void);
 *Lesson code file to review: [07_maze_game_models.c](lessons/07_maze_game_models.c)*
 
 Support OBJ fileformat 3D models loading, simple mesh loading and scene placement.
+
+Functions to be implemented:
+```c
+Model LoadModel(const char *fileName);
+void UnloadModel(Model model); 
+void DrawModel(Model model, Vector3 position, Color tint);
+```
 
 ## Getting help 
 We strongly encourage you using the online [raylib forum](forum.raylib.com) to discuss challenges with other students. However, we recommend not to look at any source code written by other students or share your source code with others **while working on the challenge**.

@@ -114,7 +114,13 @@ void DrawRectangle(int posX, int posY, int width, int height, Color color);
 
 *Lesson code file to review: [05_dungeon_game_textures.c](lessosn/05_dungeon_game_textures.c)*
 
-Load image data from a BMP file, decodifying information if required, convert that image data to a texture (GPU uploading) and leran to draw that texture on the canvas.
+To draw textures on our canvas, first we need to understand load some image data from an image file (probably decompressing and decodyfing read data) to obtain an array of pixels; after that, image data that is placed in RAM memory should be uploaded to VRAM memory (also referred as GPU memory) and configured with some additional display parameters, this is called **a texture**. Once image is loaded and converted to texture, it's ready to be drawn.
+
+Some important concepts to remember:
+ 1. Image data is loaded from an image file and is stored in RAM memory. That data is usually compressed and/or codyfied in the image file and should be expanded to a simple array of pixels.
+ 2. Following the above declaration, note that any image file (.bmp, .jpg, .tga, .png...) will presumably have the same size once loaded into RAM, independently of the disk size of that compressed and/or codyfied data.
+ 3. To convert that image data into a texture, we upload pixels data to VRAM... and we set a series of display configuration parameters for that texture.
+ 4. Once image data is converted to a texture, we usually don't need that data in RAM memory any more.
 
 Functions to be implemented:
 ```c
@@ -129,7 +135,9 @@ void DrawTexture(Texture2D texture, int posX, int posY, Color tint);
 
 *Lesson code file to review: [06_dungeon_game_tiles.c](lessons/06_dungeon_game_tiles.c)*
 
-Load tilemap data from different file sources, from a simple text file to an image pixel data.
+*TODO: Explain tiles theory?*
+
+In this lesson we will learn how to load tilemap data from a simple text file and use a tileset to draw our level based on that tilemap data. We will complete the lesson adding extra information for every tile (collision information) and multiple tile-based layers to our level.
 
 Functions to be implemented:
 ```c
@@ -141,6 +149,8 @@ void DrawTileMap(TileMap map);
 ### Lesson 07: Sprites animation
 
 *Lesson code file to review: [07_dungeon_game_sprites.c](lessons/07_dungeon_game_sprites.c)*
+
+We will see a simple example of how sprites-based animation works. We will load a texture containing multiple frames for our player and we will see how to play simple animations depending on user inputs to animate player walking in multiple directions.
 
 Functions to be implemented:
 ```c

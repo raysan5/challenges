@@ -106,9 +106,9 @@ To draw basic shapes using rlgl, we can just define them as a series of vertices
 
 Functions to be implemented:
 ```c
-void DrawLine(Vector2 startPos, Vector2 endPos, Color color);
-void DrawCircle(Vector2 center, float radius, Color color);
-void DrawRectangle(int posX, int posY, int width, int height, Color color);
+void DrawLine(Vector2 startPos, Vector2 endPos, Color color);               // Draw a line between two points
+void DrawCircle(Vector2 center, float radius, Color color);                 // Draw a filled circle
+void DrawRectangle(int posX, int posY, int width, int height, Color color); // Draw a filled rectangle
 ```
 
 ### Lesson 05: Image loading and texture creation
@@ -125,11 +125,12 @@ Some important concepts to remember:
 
 Functions to be implemented:
 ```c
-Image LoadImage(const char *fileName);
-void UnloadImage(Image image);
-Texture2D LoadTextureFromImage(Image image);
-void UnloadTexture(Texture2D texture);
-void DrawTexture(Texture2D texture, int posX, int posY, Color tint);
+Image LoadImage(const char *fileName);                   // Load image data from file (RAM)
+void UnloadImage(Image image);                           // Unload image data from RAM
+Texture2D LoadTextureFromImage(Image image);             // Load texture from image data (VRAM)
+void UnloadTexture(Texture2D texture);                   // Unload texture from VRAM
+
+void DrawTexture(Texture2D texture, Vector2 position, Color tint); // Draw texture in screen position coordinates
 ```
 
 ### Lesson 06: Tilemap data loading
@@ -142,9 +143,10 @@ In this lesson we will learn how to load tilemap data from a simple text file an
 
 Functions to be implemented:
 ```c
-TileMap LoadTileMap(const char *fileName);
-void UnloadTileMap(TileMap map);
-void DrawTileMap(TileMap map);
+TileMap LoadTileMap(const char *fileName);         // Load tilemap data from file (RAM)
+void UnloadTileMap(TileMap map);                   // Unload tilemap data from RAM
+
+void DrawTileMap(TileMap map, Texture2D tileset);  // Draw tilemap using tileset texture
 ```
 
 ### Lesson 07: Sprites animation
@@ -155,10 +157,10 @@ We will see a simple example of how sprites-based animation works. We will load 
 
 Functions to be implemented:
 ```c
-Sprite LoadSprite(const char *fileName);
-void UnloadSprite(Sprite sprite);
-void UpdateSprite(Sprite *sprite);
-void DrawSprite(Sprite sprite);
+Sprite LoadSprite(const char *fileName);    // Load sprite data from spritesheet file
+void UnloadSprite(Sprite sprite);           // Unload sprite data
+void UpdateSprite(Sprite *sprite);          // Update sprite data animation (frames-based animation)
+void DrawSprite(Sprite sprite);             // Draw sprite in the screen 
 ```
 
 ## Getting help 

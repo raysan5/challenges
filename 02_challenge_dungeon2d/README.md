@@ -48,20 +48,37 @@ Lesson | Learning outcome | Source file | Related functions
 
 *Lesson code file to review: [01_dungeon_game_intro.c](lessons/01_dungeon_game_intro.c)*
 
-In this first lesson we will introduce rlgl module library and the underlying layer OpenGL. We will setup a window and graphic device to be able to transfer data and control the GPU.
+In this first lesson we will introduce rlgl module library and the underlying OpenGL layer.
 
-https://github.com/raysan5/raylib/wiki/OpenGL-Graphic-API
+rlgl is a very thin layer (wrapper) over OpenGL that simplyfies its usage to a immediate-mode programming style, it means, just defining vertex in a very direct mode to draw elements on the screen. OpenGL 1.1 just worked that way and it was very intuitive to the user but since OpenGL 2.1 that working mode became deprecated and replaced by a more complex (and efficient) way of working, using shaders. rlgl allows programming in an immediate mode style over any OpenGL version, it just takes care internally of vertex buffers filling and setting things up simplifying graphics programming to the user without losing the power of newer OpenGL versions.
+
+More details on the utility of rlgl intermediate layer can be found [here](https://github.com/raysan5/raylib/wiki/OpenGL-Graphic-API).
 
 ### Lesson 02: Window creation and management
 
 *Lesson code file to review: [02_dungeon_game_window.c](lessons/02_dungeon_game_window.c)*
 
-Initialize window and graphic device context. Using the auxiliar libraries GLFW3 (window, input management) and GLAD (extensions loading).
+In this lesson we will setup a window and the graphic device context to be able to access and control the GPU. We will use two great auxiliar libraries:
+
+  - [GLFW3](http://www.glfw.org/docs/latest/) - Multiplatform library to manage window, graphic context and inputs. 
+  - [GLAD](https://github.com/Dav1dde/glad) -  Library to manage OpenGL extensions loading.
+
+**Window creation**
+
+To place our graphic device (understand it as a drawing canvas), we need a window (understand it as the frame for the canvas); but that window can change from system to system. In Windows OS, that window is managed by the underlying system libraries (usually [GDI](https://en.wikipedia.org/wiki/Graphics_Device_Interface)) while in Linux is managed by the underlying [X11](https://en.wikipedia.org/wiki/X_Window_System) system; additionally, that window frame should match the graphic device (drawing canvas) attached to it. To make sure we create the correct frame with the correct canvas (for the current OS) we will use GLFW3 library that simplyfies that task.
 
 Functions to be implemented:
 ```c
 void InitWindow(int screenWidth, int screenHeight);         // Initialize window using GLFW3
 void CloseWindow(void);                                     // Close window
+```
+**Graphic Device initialization**
+
+Once the window is created with the correct configuration for the desired graphic device context (in our case, OpenGL 3.3 Core profile), we need to initialize any required OpenGL extensión and initialize some context configuration parameters.
+
+Functions to be implemented:
+```c
+void InitGraphicDevice(int screenWidth, int screenHeight);  // Initialize graphic device using rlgl
 ```
 
 ### Lesson 03: Inputs management

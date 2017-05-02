@@ -51,14 +51,16 @@ Lesson | Learning outcome | Source file | Related functions
 
 *Lesson code file to review: [01_maze_game_intro.c](lessons/01_maze_game_intro.c)*
 
-[Introduction to modern OpenGL](https://learnopengl.com/) graphic pipeline...
+For a great introduction to modern OpenGL, [check this documentation](https://learnopengl.com/).
 
-Learn modern OpenGL 3.3 functionality, understand graphic pipeline and programmable shaders.
+For windows creation and management using GLFW3, check [Lesson 02 from Challenge 02](../02_challenge_dungeon2d/README.md#lesson-02-window-creation-and-management).
+
+**Graphic Device initialization**
+
+Once the window is created with the correct configuration for the desired graphic device context (in our case, OpenGL 3.3 Core profile), we need to initialize any required OpenGL extensión and initialize some context configuration parameters.
 
 Functions to be implemented:
 ```c
-void InitWindow(int screenWidth, int screenHeight);         // Initialize window using GLFW3
-void CloseWindow(void);                                     // Close window
 void InitGraphicsDevice(int screenWidth, int screenHeight); // Initialize graphics device context
 ```
 
@@ -66,7 +68,7 @@ void InitGraphicsDevice(int screenWidth, int screenHeight); // Initialize graphi
 
 *Lesson code file to review: [02_maze_game_inputs.c](lessons/02_maze_game_inputs.c)*
 
-Read user inputs (keyboard-mouse-gamepad) using GLFW3 library.
+We will read user inputs from gamepad, to do that we will use GLFW3 library, to abstract our code from multiple platforms. In GLFW3 inputs come as events polled at a regular basis (usually every frame) and can be read in callback functions.
 
 Functions to be implemented:
 ```c
@@ -79,7 +81,11 @@ float GetGamepadAxisMovement(int gamepad, int axis);       // Return axis moveme
 
 *Lesson code file to review: [03_maze_game_textures.c](lessons/03_maze_game_textures.c)*
 
-Load image data from a file, decodifying information if required, convert that image data to a texture (GPU uploading) and leran to draw that texture on the canvas.
+We will load image data from a file, decompressing and/or decodifying information if required, and convert that image data to a texture (GPU uploading) and learn to draw that texture on the canvas.
+
+In our implementation we will support multiple image fileformats (.bmp, .jpg, .tga, .png...) using the header-only library: [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h).
+
+Once image data is loaded, we will convert it to a texture and use it for drawing on the screen.
 
 Functions to be implemented:
 ```c
@@ -94,7 +100,7 @@ void DrawTexture(Texture2D texture, int posX, int posY, Color tint);
 
 *Lesson code file to review: [04_maze_game_cubicmap.c](lessons/04_maze_game_cubicmap.c)*
 
-Load cubicmap from image file data, generate 3D mesh for the map (vertex data) and screen drawing.
+In this lesson we are loading the level map from an image file data and we will generate a 3D cubes-based mesh for the level, defining all required vertex data.
 
 Functions to be implemented:
 ```c
@@ -107,7 +113,7 @@ void DrawCubicmap(Cubicmap map);
 
 *Lesson code file to review: [05_maze_game_camera.c](lessons/05_maze_game_camera.c)*
 
-Manage camera system and implement first person view.
+We will learn how to manage camera in 3d and we will implement a first person camera system.
 
 Functions to be implemented:
 ```c

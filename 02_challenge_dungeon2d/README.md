@@ -60,7 +60,7 @@ More details on the utility of rlgl intermediate layer can be found [here](https
 
 In this lesson we will setup a window and the graphic device context to be able to access and control the GPU. We will use two great auxiliar libraries:
 
-  - [GLFW3](http://www.glfw.org/docs/latest/) - Multiplatform library to manage window, graphic context and inputs. 
+  - [GLFW3](http://www.glfw.org/docs/latest/) ([source](https://github.com/glfw/glfw)) - Multiplatform library to manage window, graphic context and inputs. 
   - [GLAD](https://github.com/Dav1dde/glad) -  Library to manage OpenGL extensions loading.
 
 **Window creation**
@@ -85,7 +85,7 @@ void InitGraphicDevice(int screenWidth, int screenHeight);  // Initialize graphi
 
 *Lesson code file to review: [03_dungeon_game_inputs.c](lessons/03_dungeon_game_inputs.c)*
 
-Read user inputs (keyboard-mouse) using GLFW3 library.
+We will need to read user inputs from keyboard and/or mouse, to do that we will also use GLFW3 library, to abstract our code from multiple platforms. In GLFW3 inputs come as events polled at a regular basis (usually every frame) and can be read in callback functions. Basically, we can detect a input state (key, button) at a specific moment and we will use that information to implement a series of useful functions.
 
 Functions to be implemented:
 ```c
@@ -101,7 +101,7 @@ Vector2 GetMousePosition(void);                         // Returns mouse positio
 
 *Lesson code file to review: [04_dungeon_game_shapes.c](lessons/04_dungeon_game_shapes.c)*
 
-Define basic shapes by vertex using immediate mode.
+To draw basic shapes using rlgl, we can just define them as a series of vertices attributes (position, texture coordinates, colors...). As explained in Lesson 01, we will use a immediate mode (original from OpenGL 1.1) to do that.
 
 Functions to be implemented:
 ```c

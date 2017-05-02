@@ -38,10 +38,10 @@ It's assumed that all concepts explained in those challenges have already been l
 Lesson | Learning outcome | Source file | Related functions
 :-----:|------------------|:------------|:-----------------:
 [01](#lesson-01-introduction-to-opengl) | opengl functionality, <br>window and context creation, <br>extensions loading | [01_maze_game_intro.c](lessons/01_maze_game_intro.c) | InitWindow(), <br>CloseWindow(), <br>InitGraphicsDevice()
-[02](#lesson-02-inputs-management) | inputs management | [02_maze_game_inputs.c](lessons/02_maze_game_inputs.c) | IsGamepadButtonPressed(), <br>GetGamepadAxisMovement()
+[02](#lesson-02-inputs-management) | inputs management (gamepad) | [02_maze_game_inputs.c](lessons/02_maze_game_inputs.c) | IsGamepadButtonPressed(), <br>GetGamepadAxisMovement()
 [03](#lesson-03-textures-loading) | image loading, <br>texture creation and drawing | [03_maze_game_textures.c](lessons/03_maze_game_textures.c) | LoadImage(), LoadTexture()
 [04](#lesson-04-level-map-loading) | level map loading, <br>vertex buffers creation | [04_maze_game_cubicmap.c](lessons/04_maze_game_cubicmap.c) | LoadCubicmap(), <br>UnloadCubicmap(), <br>DrawCubicmap()
-[05](#lesson-05-camera-system-management-1st-person) | 1st person camera creation | [05_maze_game_camera.c](lessons/05_maze_game_camera.c) | UpdateCamera()
+[05](#lesson-05-camera-system-management-1st-person) | camera system (1st person) | [05_maze_game_camera.c](lessons/05_maze_game_camera.c) | UpdateCamera()
 [06](#lesson-06-collision-detection-and-resolution) | collision detection and resolution | [06_maze_game_collisions.c](lessons/06_maze_game_collisions.c) | CheckCollisionCubicmap()
 [07](#lesson-07-models-loading) | models loading and drawing | [07_maze_game_models.c](lessons/07_maze_game_models.c) | LoadModel(), UnloadModel(), <br>DrawModel()
 
@@ -51,8 +51,7 @@ Lesson | Learning outcome | Source file | Related functions
 
 *Lesson code file to review: [01_maze_game_intro.c](lessons/01_maze_game_intro.c)*
 
-Introduction to modern OpenGL graphic pipeline
-In this first lesson we will introduce raylib library and videogames programming principles. We will setup raylib and take a look to its functionality; we will see how videogame life cycle works and we will implement a basic screens management system for our game.
+[Introduction to modern OpenGL](https://learnopengl.com/) graphic pipeline...
 
 Learn modern OpenGL 3.3 functionality, understand graphic pipeline and programmable shaders.
 

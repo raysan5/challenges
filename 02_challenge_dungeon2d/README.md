@@ -22,6 +22,7 @@ It's assumed that all concepts explained in that challenge have already been lea
 **Learning Outcomes:**
  - rlgl functionality and possibilities
  - Window creation, configuration and management (GLFW3)
+ - Context creation (OpenGL 3.3) and extensions loading (GLAD)
  - Inputs management (keyboard, mouse) (GLFW3)
  - Basic shaped drawing defining vertex data (immediate-mode)
  - Image loading (RAM), texture creation (VRAM) and drawing
@@ -35,8 +36,8 @@ It's assumed that all concepts explained in that challenge have already been lea
 Lesson | Learning outcome | Source file | Related functions
 :-----:|------------------|:------------|:-----------------:
 [01](#lesson-01-introduction-to-rlgl) | rlgl functionality | [01_dungeon_game_intro.c](lessons/01_dungeon_game_intro.c) | -
-[02](#lesson-02-window-creation-and-management) | window creation and management | [02_dungeon_game_window.c](lessons/02_dungeon_game_window.c) | InitWindow(), <br>CloseWindow()
-[03](#lesson-03-inputs-management) | inputs management | [03_dungeon_game_inputs.c](lessons/03_dungeon_game_inputs.c) | IsKeyDown(), IsKeyPressed(), <br>IsMouseButtonPressed(), <br>GetMousePosition()
+[02](#lesson-02-window-creation-and-management) | window creation and management, <br>context initialization, <br>extensions loading | [02_dungeon_game_window.c](lessons/02_dungeon_game_window.c) | InitWindow(), <br>CloseWindow(), <br>InitGraphicsDevice()
+[03](#lesson-03-inputs-management) | inputs management <br>(keyboard, mouse) | [03_dungeon_game_inputs.c](lessons/03_dungeon_game_inputs.c) | IsKeyDown(), IsKeyPressed(), <br>IsMouseButtonPressed(), <br>GetMousePosition()
 [04](#lesson-04-basic-shapes-definition-and-drawing) | basic shapes definition | [04_dungeon_game_shapes.c](lessons/04_dungeon_game_shapes.c) | DrawLine(), DrawTriangle(), DrawRectangle()
 [05](#lesson-05-image-loading-and-texture-creation) | image data loading, texture creation and drawing | [05_dungeon_game_textures.c](lessosn/05_dungeon_game_textures.c) | LoadImage(), UnloadImage(), <br>LoadTexture(), UnloadTexture(), LoadBMP()
 [06](#lesson-06-tilemap-data-loading) | tilemap data loading | [06_dungeon_game_tilemap.c](lessons/06_dungeon_game_tilemap.c) | LoadTilemap(), UnloadTileMap()

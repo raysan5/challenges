@@ -31,6 +31,7 @@ This game is developed using raylib [rlgl](https://github.com/raysan5/raylib/blo
 **Learning outcomes:**
  - rlgl functionality and possibilities
  - Window creation, configuration and management (GLFW3)
+ - Context creation (OpenGL 3.3) and extensions loading (GLAD)
  - Inputs management (keyboard, mouse) (GLFW3)
  - Basic shaped drawing defining vertex data (immediate-mode)
  - Image loading (RAM), texture creation (VRAM) and drawing

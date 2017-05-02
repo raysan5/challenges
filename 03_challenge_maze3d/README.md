@@ -89,59 +89,70 @@ Once image data is loaded, we will convert it to a texture and use it for drawin
 
 Functions to be implemented:
 ```c
-Image LoadImage(const char *fileName);
-void UnloadImage(Image image);
-Texture2D LoadTextureFromImage(Image image);
-void UnloadTexture(Texture2D texture);
-void DrawTexture(Texture2D texture, int posX, int posY, Color tint);
+Image LoadImage(const char *fileName);                   // Load image data from file (RAM)
+void UnloadImage(Image image);                           // Unload image data from RAM
+Texture2D LoadTextureFromImage(Image image);             // Load texture from image data (VRAM)
+void UnloadTexture(Texture2D texture);                   // Unload texture from VRAM
+
+void DrawTexture(Texture2D texture, Vector2 position, Color tint); // Draw texture in screen position coordinates
 ```
 
 ### Lesson 04: Level map loading
 
 *Lesson code file to review: [04_maze_game_cubicmap.c](lessons/04_maze_game_cubicmap.c)*
 
-In this lesson we are loading the level map from an image file data and we will generate a 3D cubes-based mesh for the level, defining all required vertex data.
+In this lesson we are loading the level map from image data and we will generate a 3D cubes-based mesh for the level, defining all required vertex data.
+
+*TODO: Image comparing source image and generated 3D mesh*
 
 Functions to be implemented:
 ```c
-Cubicmap LoadCubicmap(const char *fileName), 
-void UnloadCubicmap(Cubicmap map)
-void DrawCubicmap(Cubicmap map);
+Mesh LoadCubicmap(const char *fileName);      // Load mesh data from cubicmap file (VRAM)
+void UnloadMesh(Mesh mesh);                   // Unload mesh data from VRAM
+
+void DrawMesh(Mesh mesh, Texture2D texture, Vector3 position, float scale, Color tint);  // Draw mesh using desired texture and basic transform (position, scale)
 ```
 
 ### Lesson 05: Camera system management (1st person)
 
 *Lesson code file to review: [05_maze_game_camera.c](lessons/05_maze_game_camera.c)*
 
-We will learn how to manage camera in 3d and we will implement a first person camera system.
+We will learn how to manage a camera system in 3d and we will implement a first person camera.
+
+Actually, a camera system, as we understand it, doesn't exist, it only consist of a series of transformation we apply to all elements of our 3D world to simulate a 3D perspective and positioning.
 
 Functions to be implemented:
 ```c
-void UpdateCamera(Camera *camera);
+void UpdateCamera(Camera *camera);            // Update camera system with transformation relative to user inputs 
 ```
 
 ### Lesson 06: Collision detection and resolution
 
 *Lesson code file to review: [06_maze_game_collisions.c](lessons/06_maze_game_collisions.c)*
 
-Implement 3D collision system based on cubemap.
+Collision detection for our 3D cubes-based map could be simplyfied to a 2D grid problem, just comparing player position and a defined player radius against cell positions in the grid that represent walls.
+
+*TODO: Illustrative image?*
 
 Functions to be implemented:
 ```c
-bool CheckCollisionCubicmap(Cubicmap map, Vector3 position, float radius);
+bool CheckCollisionCubicmap(Image cubicmap, Vector3 position, float radius);   // Check collision between map and player data
 ```
 
 ### Lesson 07: Models loading
 
 *Lesson code file to review: [07_maze_game_models.c](lessons/07_maze_game_models.c)*
 
-Support OBJ fileformat 3D models loading, simple mesh loading and scene placement.
+In this lesson we will learn to load simple 3D models from OBJ fileformat, one of the most simple mesh formats. Once mesh is loaded, we can place it anywhere in the scene and draw it using a texture.
+
+*TODO: Relationship diagram between Model = Mesh + Transform + Material (Shader + Textures + Parameters)*
 
 Functions to be implemented:
 ```c
-Model LoadModel(const char *fileName);
-void UnloadModel(Model model); 
-void DrawModel(Model model, Vector3 position, Color tint);
+Model LoadModel(const char *fileName);          // Load 3d model from file
+void UnloadModel(Model model);                  // Unload 3d model
+
+void DrawModel(Model model, Vector3 position, Color tint); // Draw model on screen
 ```
 
 ## Getting help 

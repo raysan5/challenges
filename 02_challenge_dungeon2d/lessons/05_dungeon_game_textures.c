@@ -29,6 +29,9 @@
 #define RLGL_STANDALONE
 #include "rlgl.h"               // rlgl library: OpenGL 1.1 immediate-mode style coding
 
+
+GLFWwindow *window;
+
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
 //----------------------------------------------------------------------------------
@@ -48,69 +51,15 @@ int main(void)
     const int screenWidth = 800;
     const int screenHeight = 450;
     
-    // GLFW3 Initialization + OpenGL 3.3 Context + Extensions
-    //--------------------------------------------------------
-    glfwSetErrorCallback(ErrorCallback);
+    InitWindow(screenWidth, screenHeight);
     
-    if (!glfwInit())
-    {
-        TraceLog(WARNING, "GLFW3: Can not initialize GLFW");
-        return 1;
-    }
-    else TraceLog(INFO, "GLFW3: GLFW initialized successfully");
+    InitGraphicsDevice(screenWidth, screenHeight);
     
-    glfwWindowHint(GLFW_SAMPLES, 4);
-    glfwWindowHint(GLFW_DEPTH_BITS, 16);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-   
-    GLFWwindow *window = glfwCreateWindow(screenWidth, screenHeight, "rlgl standalone", NULL, NULL);
-    
-    if (!window)
-    {
-        glfwTerminate();
-        return 2;
-    }
-    else TraceLog(INFO, "GLFW3: Window created successfully");
-    
-    glfwSetWindowPos(window, 200, 200);
-    
-    glfwSetKeyCallback(window, KeyCallback);
-    
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
-    
-    // Load OpenGL 3.3 supported extensions
-    rlglLoadExtensions(glfwGetProcAddress);
-    //--------------------------------------------------------
-    
-    // Initialize OpenGL context (states and resources)
-    rlglInit(screenWidth, screenHeight);
-
-    // Initialize viewport and internal projection/modelview matrices
-    rlViewport(0, 0, screenWidth, screenHeight);
-    rlMatrixMode(RL_PROJECTION);                        // Switch to PROJECTION matrix
-    rlLoadIdentity();                                   // Reset current matrix (PROJECTION)
-    rlOrtho(0, screenWidth, screenHeight, 0, 0.0f, 1.0f); // Orthographic projection with top-left corner at (0,0)
-    rlMatrixMode(RL_MODELVIEW);                         // Switch back to MODELVIEW matrix
-    rlLoadIdentity();                                   // Reset current matrix (MODELVIEW)
-
-    rlClearColor(245, 245, 245, 255);                   // Define clear color
-    rlEnableDepthTest();                                // Enable DEPTH_TEST for 3D
-    
-    Camera camera;
-    camera.position = (Vector3){ 5.0f, 5.0f, 5.0f };    // Camera position
-    camera.target = (Vector3){ 0.0f, 0.0f, 0.0f };      // Camera looking at point
-    camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };          // Camera up vector (rotation towards target)
-    camera.fovy = 45.0f;                                // Camera field-of-view Y
-    
-    Vector3 cubePosition = { 0.0f, 0.0f, 0.0f };        // Cube default position (center)
+    SetTargetFPS(60);
     //--------------------------------------------------------------------------------------    
 
     // Main game loop    
-    while (!glfwWindowShouldClose(window)) 
+    while (!glfwWindowShouldClose(window))
     {
         // Update
         //----------------------------------------------------------------------------------
@@ -121,39 +70,6 @@ int main(void)
         //----------------------------------------------------------------------------------
         rlClearScreenBuffers();             // Clear current framebuffer
         
-            // Calculate projection matrix (from perspective) and view matrix from camera look at
-            Matrix matProj = MatrixPerspective(camera.fovy, (double)screenWidth/(double)screenHeight, 0.01, 1000.0);
-            MatrixTranspose(&matProj);
-            Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
-
-            SetMatrixModelview(matView);    // Replace internal modelview matrix by a custom one
-            SetMatrixProjection(matProj);   // Replace internal projection matrix by a custom one
-
-            DrawCube(cubePosition, 2.0f, 2.0f, 2.0f, RED);
-            DrawCubeWires(cubePosition, 2.0f, 2.0f, 2.0f, RAYWHITE);
-            DrawGrid(10, 1.0f);
-
-            // NOTE: Internal buffers drawing (3D data)
-            rlglDraw();
-            
-            // Draw '2D' elements in the scene (GUI)
-#define RLGL_CREATE_MATRIX_MANUALLY
-#if defined(RLGL_CREATE_MATRIX_MANUALLY)
-            matProj = MatrixOrtho(0.0, screenWidth, screenHeight, 0.0, 0.0, 1.0);
-            MatrixTranspose(&matProj);
-            matView = MatrixIdentity();
-            
-            SetMatrixModelview(matView);    // Replace internal modelview matrix by a custom one
-            SetMatrixProjection(matProj);   // Replace internal projection matrix by a custom one
-
-#else   // Let rlgl generate and multiply matrix internally
-
-            rlMatrixMode(RL_PROJECTION);                            // Enable internal projection matrix
-            rlLoadIdentity();                                       // Reset internal projection matrix
-            rlOrtho(0.0, screenWidth, screenHeight, 0.0, 0.0, 1.0); // Recalculate internal projection matrix
-            rlMatrixMode(RL_MODELVIEW);                             // Enable internal modelview matrix
-            rlLoadIdentity();                                       // Reset internal modelview matrix
-#endif
             DrawRectangleV((Vector2){ 10.0f, 10.0f }, (Vector2){ 780.0f, 20.0f }, DARKGRAY);
 
             // NOTE: Internal buffers drawing (2D data)
@@ -168,8 +84,7 @@ int main(void)
     //--------------------------------------------------------------------------------------
     rlglClose();                    // Unload rlgl internal buffers and default shader/texture
     
-    glfwDestroyWindow(window);      // Close window
-    glfwTerminate();                // Free GLFW3 resources
+    CloseWindow();
     //--------------------------------------------------------------------------------------
     
     return 0;
@@ -194,6 +109,68 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     }
 }
 
+void InitWindow(int screenWidth, int screenHeight)
+{
+    // GLFW3 Initialization + OpenGL 3.3 Context + Extensions
+    glfwSetErrorCallback(ErrorCallback);
+    
+    if (!glfwInit())
+    {
+        TraceLog(WARNING, "GLFW3: Can not initialize GLFW");
+        return 1;
+    }
+    else TraceLog(INFO, "GLFW3: GLFW initialized successfully");
+    
+    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_DEPTH_BITS, 16);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+   
+    window = glfwCreateWindow(screenWidth, screenHeight, "rlgl standalone", NULL, NULL);
+    
+    if (!window)
+    {
+        glfwTerminate();
+        return 2;
+    }
+    else TraceLog(INFO, "GLFW3: Window created successfully");
+    
+    glfwSetWindowPos(window, 200, 200);
+    
+    glfwSetKeyCallback(window, KeyCallback);
+    
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
+}
+
+void CloseWindow(void)
+{
+    glfwDestroyWindow(window);      // Close window
+    glfwTerminate();                // Free GLFW3 resources
+}
+
+void InitGraphicsDevice(int screenWidth, int screenHeight)
+{
+    // Load OpenGL 3.3 supported extensions
+    rlglLoadExtensions(glfwGetProcAddress);
+
+    // Initialize OpenGL context (states and resources)
+    rlglInit(screenWidth, screenHeight);
+
+    // Initialize viewport and internal projection/modelview matrices
+    rlViewport(0, 0, screenWidth, screenHeight);
+    rlMatrixMode(RL_PROJECTION);                        // Switch to PROJECTION matrix
+    rlLoadIdentity();                                   // Reset current matrix (PROJECTION)
+    rlOrtho(0, screenWidth, screenHeight, 0, 0.0f, 1.0f); // Orthographic projection with top-left corner at (0,0)
+    rlMatrixMode(RL_MODELVIEW);                         // Switch back to MODELVIEW matrix
+    rlLoadIdentity();                                   // Reset current matrix (MODELVIEW)
+
+    rlClearColor(245, 245, 245, 255);                   // Define clear color
+    rlEnableDepthTest();                                // Enable DEPTH_TEST for 3D
+}
+
 // Draw rectangle using rlgl OpenGL 1.1 style coding (translated to OpenGL 3.3 internally)
 static void DrawRectangleV(Vector2 position, Vector2 size, Color color)
 {
@@ -209,6 +186,14 @@ static void DrawRectangleV(Vector2 position, Vector2 size, Color color)
         rlVertex2i(position.x + size.x, position.y);
     rlEnd();
 }
+
+
+
+
+
+
+
+
 
 typedef struct Image {
     unsigned int width;

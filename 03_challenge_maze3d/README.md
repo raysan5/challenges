@@ -24,7 +24,7 @@ It's assumed that all concepts explained in those challenges have already been l
  - OpenGL 3.3 graphic pipeline functionality
  - Window creation, configuration and management (GLFW3)
  - Context creation (OpenGL 3.3) and extensions loading (GLAD)
- - Inputs management (keyboard, mouse, gamepad) (GLFW3)
+ - Inputs management (keyboard, mouse) (GLFW3)
  - Image loading (RAM), texture creation (VRAM) and drawing
  - Level map data loading and vertex buffers generation (VBO)
  - Camera system creation and management (1st person)
@@ -38,12 +38,12 @@ It's assumed that all concepts explained in those challenges have already been l
 Lesson | Learning outcome | Source file | Related functions
 :-----:|------------------|:------------|:-----------------:
 [01](#lesson-01-introduction-to-opengl) | opengl functionality, <br>window and context creation, <br>extensions loading | [01_maze_game_intro.c](lessons/01_maze_game_intro.c) | InitWindow(), <br>CloseWindow(), <br>InitGraphicsDevice()
-[02](#lesson-02-inputs-management) | inputs management (gamepad) | [02_maze_game_inputs.c](lessons/02_maze_game_inputs.c) | IsGamepadButtonPressed(), <br>GetGamepadAxisMovement()
+[02](#lesson-02-inputs-management) | inputs management (gamepad) | [02_maze_game_inputs.c](lessons/02_maze_game_inputs.c) | IsKeyDown(), IsKeyPressed(), <br>IsMouseButtonDown(), IsMouseButtonPressed(), <br>GetMousePosition()
 [03](#lesson-03-textures-loading) | image loading, <br>texture creation and drawing | [03_maze_game_textures.c](lessons/03_maze_game_textures.c) | LoadImage(), LoadTexture()
-[04](#lesson-04-level-map-loading) | level map loading, <br>vertex buffers creation | [04_maze_game_cubicmap.c](lessons/04_maze_game_cubicmap.c) | LoadCubicmap(), <br>UnloadCubicmap(), <br>DrawCubicmap()
+[04](#lesson-04-level-map-loading) | level map loading, <br>vertex buffers creation | [04_maze_game_cubicmap.c](lessons/04_maze_game_cubicmap.c) | LoadCubicmap(), <br>UnloadModel(), <br>DrawModel()
 [05](#lesson-05-camera-system-management-1st-person) | camera system (1st person) | [05_maze_game_camera.c](lessons/05_maze_game_camera.c) | UpdateCamera()
-[06](#lesson-06-collision-detection-and-resolution) | collision detection and resolution | [06_maze_game_collisions.c](lessons/06_maze_game_collisions.c) | CheckCollisionCubicmap()
-[07](#lesson-07-models-loading) | models loading and drawing | [07_maze_game_models.c](lessons/07_maze_game_models.c) | LoadModel(), UnloadModel(), <br>DrawModel()
+[06](#lesson-06-collision-detection-and-resolution) | collision detection and resolution | [06_maze_game_collisions.c](lessons/06_maze_game_collisions.c) | ResolveCollisionCubicmap()
+[07](#lesson-07-models-loading) | models loading and drawing | [07_maze_game_models.c](lessons/07_maze_game_models.c) | LoadModel(), LoadOBJ()
 
 **NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments, in the form of *TODO* points for every task to be completed. Read carefully those comments to understand every task and how implement the proposed solutions.
 
@@ -68,13 +68,15 @@ void InitGraphicsDevice(int screenWidth, int screenHeight); // Initialize graphi
 
 *Lesson code file to review: [02_maze_game_inputs.c](lessons/02_maze_game_inputs.c)*
 
-We will read user inputs from gamepad, to do that we will use GLFW3 library, to abstract our code from multiple platforms. In GLFW3 inputs come as events polled at a regular basis (usually every frame) and can be read in callback functions.
+We will read user inputs from keyboard and mouse, to do that we will use GLFW3 library, to abstract our code from multiple platforms. In GLFW3 inputs come as events polled at a regular basis (usually every frame) and can be read in callback functions.
 
 Functions to be implemented:
 ```c
-bool IsGamepadButtonPressed(int gamepad, int button);      // Detect if a gamepad button has been pressed once
-int GetGamepadAxisCount(int gamepad);                      // Return gamepad axis count for a gamepad
-float GetGamepadAxisMovement(int gamepad, int axis);       // Return axis movement value for a gamepad axis
+bool IsKeyPressed(int key);                  // Detect if a key has been pressed once
+bool IsKeyDown(int key);                     // Detect if a key is being pressed (key held down)
+bool IsMouseButtonPressed(int button);       // Detect if a mouse button has been pressed once
+bool IsMouseButtonDown(int button);          // Detect if a mouse button is being pressed
+Vector2 GetMousePosition(void);              // Returns mouse position XY
 ```
 
 ### Lesson 03: Textures loading
@@ -93,7 +95,6 @@ Image LoadImage(const char *fileName);                   // Load image data from
 void UnloadImage(Image image);                           // Unload image data from RAM
 Texture2D LoadTextureFromImage(Image image);             // Load texture from image data (VRAM)
 void UnloadTexture(Texture2D texture);                   // Unload texture from VRAM
-
 void DrawTexture(Texture2D texture, Vector2 position, Color tint); // Draw texture in screen position coordinates
 ```
 
@@ -107,10 +108,10 @@ In this lesson we are loading the level map from image data and we will generate
 
 Functions to be implemented:
 ```c
-Mesh LoadCubicmap(const char *fileName);      // Load mesh data from cubicmap file (VRAM)
-void UnloadMesh(Mesh mesh);                   // Unload mesh data from VRAM
+Model LoadCubicmap(Image cubicmap, float cubeSize);   // Load cubicmap image into a 3d model
+void UnloadModel(Model model);                        // Unload model data from memory (RAM and VRAM)
 
-void DrawMesh(Mesh mesh, Texture2D texture, Vector3 position, float scale, Color tint);  // Draw mesh using desired texture and basic transform (position, scale)
+void DrawModel(Model model, Vector3 position, float scale, Color tint);   // Draw model on screen
 ```
 
 ### Lesson 05: Camera system management (1st person)
@@ -136,7 +137,7 @@ Collision detection for our 3D cubes-based map could be simplyfied to a 2D grid 
 
 Functions to be implemented:
 ```c
-bool CheckCollisionCubicmap(Image cubicmap, Vector3 position, float radius);   // Check collision between map and player data
+Vector3 ResolveCollisionCubicmap(Image cubicmap, Vector3 position, Vector3 *playerPosition, float radius);   // Check collision between map and player data
 ```
 
 ### Lesson 07: Models loading
@@ -150,9 +151,7 @@ In this lesson we will learn to load simple 3D models from OBJ fileformat, one o
 Functions to be implemented:
 ```c
 Model LoadModel(const char *fileName);          // Load 3d model from file
-void UnloadModel(Model model);                  // Unload 3d model
-
-void DrawModel(Model model, Vector3 position, Color tint); // Draw model on screen
+Mesh LoadOBJ(const char *fileName);             // Load mesh from OBJ file
 ```
 
 ## Getting help 

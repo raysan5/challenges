@@ -35,11 +35,11 @@ It's assumed that all concepts explained in that challenge have already been lea
 
 Lesson | Learning outcome | Source file | Related functions
 :-----:|------------------|:------------|:-----------------:
-[01](#lesson-01-window-creation-and-management) | window creation and management | [01_dungeon_game_window.c](lessons/01_dungeon_game_window.c) | -
-[02](#lesson-02-graphics-device-initialization) | context initialization, <br>extensions loading | [02_dungeon_game_graphics.c](lessons/02_dungeon_game_graphics.c) | InitWindow(), <br>CloseWindow(), <br>InitGraphicsDevice()
+[01](#lesson-01-window-creation-and-management) | window creation and management | [01_dungeon_game_window.c](lessons/01_dungeon_game_window.c) | InitWindow(), <br>CloseWindow()
+[02](#lesson-02-graphics-device-initialization) | context initialization, <br>extensions loading | [02_dungeon_game_graphics.c](lessons/02_dungeon_game_graphics.c) | InitGraphicsDevice()
 [03](#lesson-03-inputs-management) | inputs management (keyboard) | [03_dungeon_game_inputs.c](lessons/03_dungeon_game_inputs.c) | IsKeyDown(), IsKeyPressed()
 [04](#lesson-04-basic-shapes-definition-and-drawing) | basic shapes definition | [04_dungeon_game_shapes.c](lessons/04_dungeon_game_shapes.c) | DrawLine(), DrawTriangle(), DrawRectangle()
-[05](#lesson-05-image-loading-and-texture-creation) | image data loading, texture creation and drawing | [05_dungeon_game_textures.c](lessosn/05_dungeon_game_textures.c) | LoadImage(), UnloadImage(), <br>LoadTexture(), UnloadTexture(), LoadBMP()
+[05](#lesson-05-image-loading-and-texture-creation) | image data loading, <br>texture creation and drawing | [05_dungeon_game_textures.c](lessosn/05_dungeon_game_textures.c) | LoadImage(), UnloadImage(), <br>LoadTexture(), UnloadTexture(), LoadBMP()
 [06](#lesson-06-tilemap-data-loading) | tilemap data loading | [06_dungeon_game_tilemap.c](lessons/06_dungeon_game_tilemap.c) | LoadTilemap(), UnloadTileMap()
 [07](#lesson-07-collision-detection) | tilemap collision detection | [07_dungeon_game_collision.c](lessons/07_dungeon_game_collision.c) | CheckCollisionTilemap()
 

@@ -35,34 +35,23 @@ It's assumed that all concepts explained in that challenge have already been lea
 
 Lesson | Learning outcome | Source file | Related functions
 :-----:|------------------|:------------|:-----------------:
-[01](#lesson-01-introduction-to-rlgl) | rlgl functionality | [01_dungeon_game_intro.c](lessons/01_dungeon_game_intro.c) | -
-[02](#lesson-02-window-creation-and-management) | window creation and management, <br>context initialization, <br>extensions loading | [02_dungeon_game_window.c](lessons/02_dungeon_game_window.c) | InitWindow(), <br>CloseWindow(), <br>InitGraphicsDevice()
-[03](#lesson-03-inputs-management) | inputs management <br>(keyboard, mouse) | [03_dungeon_game_inputs.c](lessons/03_dungeon_game_inputs.c) | IsKeyDown(), IsKeyPressed(), <br>IsMouseButtonPressed(), <br>GetMousePosition()
+[01](#lesson-01-window-creation-and-management) | window creation and management | [01_dungeon_game_window.c](lessons/01_dungeon_game_window.c) | -
+[02](#lesson-02-graphics-device-initialization) | context initialization, <br>extensions loading | [02_dungeon_game_graphics.c](lessons/02_dungeon_game_graphics.c) | InitWindow(), <br>CloseWindow(), <br>InitGraphicsDevice()
+[03](#lesson-03-inputs-management) | inputs management (keyboard) | [03_dungeon_game_inputs.c](lessons/03_dungeon_game_inputs.c) | IsKeyDown(), IsKeyPressed()
 [04](#lesson-04-basic-shapes-definition-and-drawing) | basic shapes definition | [04_dungeon_game_shapes.c](lessons/04_dungeon_game_shapes.c) | DrawLine(), DrawTriangle(), DrawRectangle()
 [05](#lesson-05-image-loading-and-texture-creation) | image data loading, texture creation and drawing | [05_dungeon_game_textures.c](lessosn/05_dungeon_game_textures.c) | LoadImage(), UnloadImage(), <br>LoadTexture(), UnloadTexture(), LoadBMP()
 [06](#lesson-06-tilemap-data-loading) | tilemap data loading | [06_dungeon_game_tilemap.c](lessons/06_dungeon_game_tilemap.c) | LoadTilemap(), UnloadTileMap()
-[07](#lesson-07-sprites-animation) | sprites animation | [07_dungeon_game_sprites.c](lessons/07_dungeon_game_sprites.c) | LoadSprite(), UnloadSprite(), UpdateSprite(), DrawSprite()
+[07](#lesson-07-collision-detection) | tilemap collision detection | [07_dungeon_game_collision.c](lessons/07_dungeon_game_collision.c) | CheckCollisionTilemap()
 
 **NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments, in the form of *TODO* points for every task to be completed. Read carefully those comments to understand every task and how implement the proposed solutions.
 
-### Lesson 01: Introduction to rlgl
+### Lesson 01: Window creation and management
 
-*Lesson code file to review: [01_dungeon_game_intro.c](lessons/01_dungeon_game_intro.c)*
+*Lesson code file to review: [01_dungeon_game_intro.c](lessons/01_dungeon_game_window.c)*
 
-In this first lesson we will introduce rlgl module library and the underlying OpenGL layer.
+In this first lesson we will setup a window and see how to manage it using auxiliar library GLFW3:
 
-rlgl is a very thin layer (wrapper) over OpenGL that simplyfies its usage to a immediate-mode programming style, it means, just defining vertex in a very direct mode to draw elements on the screen. OpenGL 1.1 just worked that way and it was very intuitive to the user but since OpenGL 2.1 that working mode became deprecated and replaced by a more complex (and efficient) way of working, using shaders. rlgl allows programming in an immediate mode style over any OpenGL version, it just takes care internally of vertex buffers filling and setting things up simplifying graphics programming to the user without losing the power of newer OpenGL versions.
-
-More details on the utility of rlgl intermediate layer can be found [here](https://github.com/raysan5/raylib/wiki/OpenGL-Graphic-API).
-
-### Lesson 02: Window creation and management
-
-*Lesson code file to review: [02_dungeon_game_window.c](lessons/02_dungeon_game_window.c)*
-
-In this lesson we will setup a window and the graphic device context to be able to access and control the GPU. We will use two great auxiliar libraries:
-
-  - [GLFW3](http://www.glfw.org/docs/latest/) ([source](https://github.com/glfw/glfw)) - Multiplatform library to manage window, graphic context and inputs. 
-  - [GLAD](https://github.com/Dav1dde/glad) -  Library to manage OpenGL extensions loading.
+  - [GLFW3](http://www.glfw.org/docs/latest/) ([source](https://github.com/glfw/glfw)) - Multiplatform library to manage window, graphic context and inputs.
 
 **Window creation**
 
@@ -73,6 +62,20 @@ Functions to be implemented:
 void InitWindow(int screenWidth, int screenHeight);         // Initialize window using GLFW3
 void CloseWindow(void);                                     // Close window
 ```
+
+### Lesson 02: Graphics Device initialization
+
+*Lesson code file to review: [02_dungeon_game_window.c](lessons/02_dungeon_game_graphics.c)*
+
+In this lesson we will learn how to initialize the graphic device context to be able to access and control the GPU. We will use two great auxiliar libraries: 
+
+  - [rlgl](https://github.com/raysan5/raylib/blob/develop/src/rlgl.h) - Simple library to manage graphic device and the underlying OpenGL layer.
+  - [glad](https://github.com/Dav1dde/glad) -  Library to manage OpenGL extensions loading.
+  
+rlgl is a very thin layer (wrapper) over OpenGL that simplyfies its usage to a immediate-mode programming style, it means, just defining vertex in a very direct mode to draw elements on the screen. OpenGL 1.1 just worked that way and it was very intuitive to the user but since OpenGL 2.1 that working mode became deprecated and replaced by a more complex (and efficient) way of working, using shaders. rlgl allows programming in an immediate mode style over any OpenGL version, it just takes care internally of vertex buffers filling and setting things up simplifying graphics programming to the user without losing the power of newer OpenGL versions.
+
+More details on the utility of rlgl intermediate layer can be found [here](https://github.com/raysan5/raylib/wiki/OpenGL-Graphic-API).
+
 **Graphic Device initialization**
 
 Once the window is created with the correct configuration for the desired graphic device context (in our case, OpenGL 3.3 Core profile), we need to initialize any required OpenGL extensión and initialize some context configuration parameters.
@@ -86,16 +89,12 @@ void InitGraphicDevice(int screenWidth, int screenHeight);  // Initialize graphi
 
 *Lesson code file to review: [03_dungeon_game_inputs.c](lessons/03_dungeon_game_inputs.c)*
 
-We will need to read user inputs from keyboard and/or mouse, to do that we will also use GLFW3 library, to abstract our code from multiple platforms. In GLFW3 inputs come as events polled at a regular basis (usually every frame) and can be read in callback functions. Basically, we can detect a input state (key, button) at a specific moment and we will use that information to implement a series of useful functions.
+We will need to read user inputs from keyboard, to do that we will also use GLFW3 library, to abstract our code from multiple platforms. In GLFW3 inputs come as events polled at a regular basis (usually every frame) and can be read in callback functions. Basically, we can detect a input state (key) at a specific moment and we will use that information to implement a series of useful functions.
 
 Functions to be implemented:
 ```c
 bool IsKeyPressed(int key);                             // Detect if a key has been pressed once
 bool IsKeyDown(int key);                                // Detect if a key is being pressed
-int GetKeyPressed(void);                                // Get latest key pressed
-bool IsMouseButtonPressed(int button);                  // Detect if a mouse button has been pressed once
-bool IsMouseButtonDown(int button);                     // Detect if a mouse button is being pressed
-Vector2 GetMousePosition(void);                         // Returns mouse position XY
 ```
 
 ### Lesson 04: Basic shapes definition and drawing
@@ -143,24 +142,21 @@ In this lesson we will learn how to load tilemap data from a simple text file an
 
 Functions to be implemented:
 ```c
-TileMap LoadTileMap(const char *fileName);         // Load tilemap data from file (RAM)
-void UnloadTileMap(TileMap map);                   // Unload tilemap data from RAM
+Tilemap LoadTilemap(const char *fileName);         // Load tilemap data from file (RAM)
+void UnloadTilemap(Tilemap map);                   // Unload tilemap data from RAM
 
-void DrawTileMap(TileMap map, Texture2D tileset);  // Draw tilemap using tileset texture
+void DrawTilemap(Tilemap map, Texture2D tileset, Vector2 position, float tileSize);  // Draw tilemap using tileset texture
 ```
 
-### Lesson 07: Sprites animation
+### Lesson 07: Collision detection
 
-*Lesson code file to review: [07_dungeon_game_sprites.c](lessons/07_dungeon_game_sprites.c)*
+*Lesson code file to review: [07_dungeon_game_collision.c](lessons/07_dungeon_game_collision.c)*
 
-We will see a simple example of how sprites-based animation works. We will load a texture containing multiple frames for our player and we will see how to play simple animations depending on user inputs to animate player walking in multiple directions.
+We will check tilemap collisions, to avoid player moving through blocked tiles.
 
 Functions to be implemented:
 ```c
-Sprite LoadSprite(const char *fileName);    // Load sprite data from spritesheet file
-void UnloadSprite(Sprite sprite);           // Unload sprite data
-void UpdateSprite(Sprite *sprite);          // Update sprite data animation (frames-based animation)
-void DrawSprite(Sprite sprite);             // Draw sprite in the screen 
+bool CheckCollisionTilemap(Tilemap map, Vector2 playerPos);    // Check tilemap collision
 ```
 
 ## Getting help 

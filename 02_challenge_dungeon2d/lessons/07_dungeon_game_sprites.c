@@ -107,6 +107,8 @@ static Rectangle tilesetRecs[TILESET_TILES] = {
     { 192, 96, 32, 32 }, { 224, 96, 32, 32 }    // 31, 32
 };
 
+#define PLAYER_COLLISION_PADDING    12      // Player padding to detect collision with walls
+
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
 //----------------------------------------------------------------------------------
@@ -182,7 +184,7 @@ int main(void)
     UnloadImage(imPlayer);
     
     // Load tilemap data: tile values (tileset index) and tile colliders
-    Tilemap tilemap = LoadTilemap("resources/tilemap.txt", "tilemap_colliders.txt");
+    Tilemap tilemap = LoadTilemap("resources/tilemap.txt", "resources/tilemap_colliders.txt");
     
     tilemap.tileSize = 32;
     tilemap.position = (Vector2){ screenWidth/2 - tilemap.tileCountX*tilemap.tileSize/2, 
@@ -251,8 +253,10 @@ int main(void)
         {
             for (int x = 0; x < tilemap.tileCountX; x++)
             {
+                // TODO: Review player padding for a better collision with walls
                 if ((tilemap.tiles[y*tilemap.tileCountX + x].collider == 0) &&
-                    CheckCollisionRecs(player, (Rectangle){ tilemap.position.x + x*tilemap.tileSize, tilemap.position.y + y*tilemap.tileSize, tilemap.tileSize, tilemap.tileSize }))
+                    CheckCollisionRecs((Rectangle){ player.x + PLAYER_COLLISION_PADDING, player.y + PLAYER_COLLISION_PADDING, player.width, player.height }, 
+                                       (Rectangle){ tilemap.position.x + x*tilemap.tileSize + PLAYER_COLLISION_PADDING, tilemap.position.y + y*tilemap.tileSize + PLAYER_COLLISION_PADDING, tilemap.tileSize, tilemap.tileSize }))
                 {
                     // Reset player position (undo player position update!)
                     player = oldPlayer;
@@ -726,38 +730,45 @@ static Tilemap LoadTilemap(const char *valuesMap, const char *collidersMap)
             
             map.tileCountX = 12;
             map.tileCountY = 8;
-
             counter = 0;
+
+            while (!feof(valuesFile))
+            {
+                fscanf(valuesFile, "%i", &map.tiles[counter].value);
+                counter++;
+            }
+            
+            fclose(valuesFile);
             
             // Read values from text file
             // NOTE: Colliders map data MUST match values data, 
             // or we need to do a previous check like done with values data
             FILE *collidersFile = fopen(collidersMap, "rt");
+            counter = 0;
+            temp = 0;
             
-            while (!feof(valuesFile))
+            while (!feof(collidersFile))
             {
-                fscanf(valuesFile, "%i", &map.tiles[counter].value);
                 fscanf(collidersFile, "%i", &temp);
                 map.tiles[counter].collider = temp;
+                
+                printf("%i ", temp);
                 counter++;
             }
+
+            fclose(collidersFile);
             
-            /*
             for (int j = 0; j < map.tileCountY; j++)
             {
                 for (int i = 0; i < map.tileCountX; i++)
                 {
-                    printf("%i ", map.tiles[j*map.tileCountX + i].value);
+                    printf("%i ", map.tiles[j*map.tileCountX + i].collider);
                 }
                 
                 printf("\n");
             }
             
             printf("\n");
-            */
-            
-            fclose(valuesFile);
-            fclose(collidersFile);
         }
         else if (strcmp(fileExt, ".bmp") == 0) 
         {

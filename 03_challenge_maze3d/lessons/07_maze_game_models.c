@@ -304,13 +304,14 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
 // GLFW3: Mouse buttons callback function
 static void MouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 {
-    
+    currentMouseState[button] = action;
 }
 
 // GLFW3: Mouse cursor callback function
 static void MouseCursorPosCallback(GLFWwindow *window, double x, double y)
 {
-    
+    //mousePosition.x = (float)x;
+    //mousePosition.y = (float)y;
 }
 
 // LESSON 01: Window and context creation, extensions loading
@@ -363,10 +364,10 @@ static void InitGraphicsDevice(int width, int height)
     // Init default white texture
     unsigned char pixels[4] = { 255, 255, 255, 255 };   // 1 pixel RGBA (4 bytes)
 
-    // TODO: texDefault = rlglLoadTexture(pixels, 1, 1, UNCOMPRESSED_R8G8B8A8, 1);
+    texDefault = LoadTexture(pixels, 1, 1, UNCOMPRESSED_R8G8B8A8);
 
     // Init default Shader (customized for GL 3.3 and ES2)
-    // TODO: shdrDefault = LoadDefaultShader();
+    shdrDefault = LoadShaderDefault();
 
     // Init internal matProjection and matModelview matrices
     matProjection = MatrixIdentity();
@@ -418,7 +419,7 @@ static void InitGraphicsDevice(int width, int height)
 static void CloseWindow(void)
 {
     // TODO: Unload default shader
-    glDeleteTextures(1, &texDefault);
+    glDeleteTextures(1, &texDefault.id);
 
     glfwDestroyWindow(window);      // Close window
     glfwTerminate();                // Free GLFW3 resources
@@ -563,28 +564,70 @@ static void UnloadImage(Image image)
     if (image.data != NULL) free(image.data);
 }
 
-// Load texture from image data into GPU memory (VRAM)
-static Texture2D LoadTextureFromImage(Image image)
-{
-    #define UNCOMPRESSED_R8G8B8A8    7      // Texture format (must match image.data)
-    
-    Texture2D texture = { 0 };
-    
-    // NOTE: Texture2D struct is defined inside rlgl
-    texture.width = image.width;
-    texture.height = image.height;
-    texture.format = UNCOMPRESSED_R8G8B8A8;
-    texture.mipmaps = 1;
-
-    // TODO: texture.id = rlglLoadTexture(image.data, image.width, image.height, UNCOMPRESSED_R8G8B8A8, 1);
-
-    return texture;
-}
-
 // Unload texture data from GPU memory (VRAM)
 static void UnloadTexture(Texture2D texture)
 {
     if (texture.id > 0) glDeleteTextures(1, &texture.id);
+}
+
+// Load texture data in GPU memory (VRAM)
+static Texture2D LoadTexture(unsigned char *data, int width, int height, int format)
+{
+    Texture2D texture = { 0 };
+    
+    // NOTE: Texture2D struct is defined inside rlgl
+    texture.width = width;
+    texture.height = height;
+    texture.format = UNCOMPRESSED_R8G8B8A8;
+    texture.mipmaps = 1;
+    
+    glBindTexture(GL_TEXTURE_2D, 0);    // Free any old binding
+
+    glGenTextures(1, &texture.id);              // Generate Pointer to the texture
+    glBindTexture(GL_TEXTURE_2D, texture.id);
+
+    switch (format)
+    {
+        case UNCOMPRESSED_GRAYSCALE:
+        {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, (unsigned char *)data);
+
+            // With swizzleMask we define how a one channel texture will be mapped to RGBA
+            // Required GL >= 3.3 or EXT_texture_swizzle/ARB_texture_swizzle
+            GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_ONE };
+            glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+
+            TraceLog(LOG_INFO, "[TEX ID %i] Grayscale texture loaded and swizzled", texture.id);
+        } break;
+        case UNCOMPRESSED_GRAY_ALPHA:
+        {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, width, height, 0, GL_RG, GL_UNSIGNED_BYTE, (unsigned char *)data);
+
+            GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_GREEN };
+            glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+        } break;
+        case UNCOMPRESSED_R5G6B5: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, width, height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned short *)data); break;
+        case UNCOMPRESSED_R8G8B8: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, (unsigned char *)data); break;
+        case UNCOMPRESSED_R5G5B5A1: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, width, height, 0, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, (unsigned short *)data); break;
+        case UNCOMPRESSED_R4G4B4A4: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA4, width, height, 0, GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4, (unsigned short *)data); break;
+        case UNCOMPRESSED_R8G8B8A8: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (unsigned char *)data); break;
+        default: TraceLog(LOG_WARNING, "Texture format not recognized"); break;
+    }
+    
+    // Configure texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);       // Set texture to repeat on x-axis
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);       // Set texture to repeat on y-axis
+    // Magnification and minification filters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);  // Alternative: GL_LINEAR
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);  // Alternative: GL_LINEAR
+    
+    // Unbind current texture
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    if (texture.id > 0) TraceLog(LOG_INFO, "[TEX ID %i] Texture created successfully (%ix%i)", texture.id, width, height);
+    else TraceLog(LOG_WARNING, "Texture could not be created");
+
+    return texture;
 }
 
 // LESSON 04: Level map loading, vertex buffer creation
@@ -625,13 +668,22 @@ static void DrawModel(Model model, Vector3 position, float scale, Color tint)
     model.material.colDiffuse = tint;       // Assign tint as diffuse color
 
     // TODO: Draw model
-    glUseProgram(material.shader.id);       // Bind material shader
+    glUseProgram(model.material.shader.id);       // Bind material shader
 
     // Upload to shader material.colDiffuse
-    glUniform4f(material.shader.colDiffuseLoc, (float)material.colDiffuse.r/255, (float)material.colDiffuse.g/255, (float)material.colDiffuse.b/255, (float)material.colDiffuse.a/255);
+    glUniform4f(model.material.shader.colDiffuseLoc, 
+                (float)model.material.colDiffuse.r/255, 
+                (float)model.material.colDiffuse.g/255, 
+                (float)model.material.colDiffuse.b/255, 
+                (float)model.material.colDiffuse.a/255);
 
     // Upload to shader material.colSpecular (if available)
-    if (material.shader.colSpecularLoc != -1) glUniform4f(material.shader.colSpecularLoc, (float)material.colSpecular.r/255, (float)material.colSpecular.g/255, (float)material.colSpecular.b/255, (float)material.colSpecular.a/255);
+    if (model.material.shader.colSpecularLoc != -1) 
+        glUniform4f(model.material.shader.colSpecularLoc, 
+                    (float)model.material.colSpecular.r/255, 
+                    (float)model.material.colSpecular.g/255, 
+                    (float)model.material.colSpecular.b/255, 
+                    (float)model.material.colSpecular.a/255);
 
     // At this point the matModelview matrix just contains the view matrix (camera)
     // That's because Begin3dMode() sets it an no model-drawing function modifies it, all use rlPushMatrix() and rlPopMatrix()
@@ -639,52 +691,48 @@ static void DrawModel(Model model, Vector3 position, float scale, Color tint)
     Matrix matProjection = matProjection;  // Projection matrix (perspective)
 
     // Calculate model-view matrix combining matModel and matView
-    Matrix matModelView = MatrixMultiply(transform, matView);           // Transform to camera-space coordinates
+    Matrix matModelView = MatrixMultiply(model.transform, matView);           // Transform to camera-space coordinates
     
     // Set shader textures (diffuse, normal, specular)
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, material.texDiffuse.id);
-    glUniform1i(material.shader.mapTexture0Loc, 0);         // Diffuse texture fits in active texture unit 0
+    glBindTexture(GL_TEXTURE_2D, model.material.texDiffuse.id);
+    glUniform1i(model.material.shader.mapTexture0Loc, 0);         // Diffuse texture fits in active texture unit 0
 
-    if ((material.texNormal.id != 0) && (material.shader.mapTexture1Loc != -1))
+    if ((model.material.texNormal.id != 0) && (model.material.shader.mapTexture1Loc != -1))
     {
-        // Upload to shader specular map flag
-        glUniform1i(glGetUniformLocation(material.shader.id, "useNormal"), 1);
-
+        // Enable shader normal map
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, material.texNormal.id);
-        glUniform1i(material.shader.mapTexture1Loc, 1);     // Normal texture fits in active texture unit 1
+        glBindTexture(GL_TEXTURE_2D, model.material.texNormal.id);
+        glUniform1i(model.material.shader.mapTexture1Loc, 1);     // Normal texture fits in active texture unit 1
     }
 
-    if ((material.texSpecular.id != 0) && (material.shader.mapTexture2Loc != -1))
+    if ((model.material.texSpecular.id != 0) && (model.material.shader.mapTexture2Loc != -1))
     {
-        // Upload to shader specular map flag
-        glUniform1i(glGetUniformLocation(material.shader.id, "useSpecular"), 1);
-
+        // Enable shader specular map
         glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, material.texSpecular.id);
-        glUniform1i(material.shader.mapTexture2Loc, 2);    // Specular texture fits in active texture unit 2
+        glBindTexture(GL_TEXTURE_2D, model.material.texSpecular.id);
+        glUniform1i(model.material.shader.mapTexture2Loc, 2);    // Specular texture fits in active texture unit 2
     }
 
     // Bind mesh VAO (vertex array objects)
-    glBindVertexArray(mesh.vaoId);
+    glBindVertexArray(model.mesh.vaoId);
     
     // Calculate model-view-matProjection matrix (MVP)
     Matrix matMVP = MatrixMultiply(matModelview, matProjection);        // Transform to screen-space coordinates
 
     // Send combined model-view-matProjection matrix to shader
-    glUniformMatrix4fv(material.shader.mvpLoc, 1, false, MatrixToFloat(matMVP));
+    glUniformMatrix4fv(model.material.shader.mvpLoc, 1, false, MatrixToFloat(matMVP));
 
     // Draw call!
-    glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount);
+    glDrawArrays(GL_TRIANGLES, 0, model.mesh.vertexCount);
     
-    if (material.texNormal.id != 0)
+    if (model.material.texNormal.id != 0)
     {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    if (material.texSpecular.id != 0)
+    if (model.material.texSpecular.id != 0)
     {
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, 0);

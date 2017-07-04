@@ -30,8 +30,8 @@
 #include "rlgl.h"               // rlgl library: OpenGL 1.1 immediate-mode style coding
 
 #include <stdio.h>              // Standard input-output C library
-#include <stdlib.h>             // Required for memory management functions: malloc(), free()
-#include <string.h>             // Required for string manipulation functions: strrchr(), strcmp()
+#include <stdlib.h>             // Memory management functions: malloc(), free()
+#include <string.h>             // String manipulation functions: strrchr(), strcmp()
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -143,14 +143,19 @@ static Texture2D LoadTextureFromImage(Image image); // Load texture from image d
 static void UnloadTexture(Texture2D texture);       // Unload texture data from GPU memory (VRAM)
 static Image LoadBMP(const char *fileName);         // Load BMP image file data
 
-static void DrawTexture(Texture2D texture, Vector2 position, Color tint);   // Draw texture in screen position coordinates
+static void DrawTexture(Texture2D texture, int posX, int posY, Color tint);   // Draw texture in screen position coordinates
+// Draw a Texture2D with extended parameters
+static void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint);
+// Draw a part of a texture (defined by a rectangle)
+static void DrawTextureRec(Texture2D texture, Rectangle sourceRec, Vector2 position, Color tint);
+// Draw a part of a texture (defined by a rectangle) with 'pro' parameters
+static void DrawTexturePro(Texture2D texture, Rectangle sourceRec, Rectangle destRec, Vector2 origin, float rotation, Color tint);
 
 // LESSON 06: Tilemap data loading and drawing
 //----------------------------------------------------------------------------------
-static Tilemap LoadTilemap(const char *fileName);   // Load tilemap data from file
-static void UnloadTilemap(Tilemap map);             // Unload tilemap data
-
-static void DrawTilemap(Tilemap map, Texture2D tileset, Vector2 position, float tileSize);  // Draw tilemap using tileset
+static Tilemap LoadTilemap(const char *valuesMap, const char *collidersMap);// Load tilemap data from file
+static void UnloadTilemap(Tilemap map);                   // Unload tilemap data
+static void DrawTilemap(Tilemap map, Texture2D tileset);  // Draw tilemap using tileset
 
 // LESSON 07: Collision detection
 //----------------------------------------------------------------------------------
@@ -170,14 +175,23 @@ int main(void)
     InitWindow(screenWidth, screenHeight);          // Initialize Window using GLFW3
     
     InitGraphicsDevice(screenWidth, screenHeight);  // Initialize graphic device (OpenGL)
-    
-    Rectangle player = { 10, 10, 20, 20 };
+       
+    // Load player texture
+    Image imPlayer = LoadImage("resources/player.bmp");
+    Texture2D texPlayer = LoadTextureFromImage(imPlayer);
+    UnloadImage(imPlayer);
     
     // Load tilemap data: tile values (tileset index) and tile colliders
-    Tilemap map; // = LoadTilemap("tilemap.txt", "tilemap_colliders.txt");
+    Tilemap tilemap = LoadTilemap("resources/tilemap.txt", "tilemap_colliders.txt");
     
+    tilemap.tileSize = 32;
+    tilemap.position = (Vector2){ screenWidth/2 - tilemap.tileCountX*tilemap.tileSize/2, 
+                                  screenHeight/2 - tilemap.tileCountY*tilemap.tileSize/2 };
+
     // Load tileset texture
-    //Texture2D texTileset = LoadTexture("tileset.bmp");
+    Image imTileset = LoadImage("resources/tileset.bmp");
+    Texture2D texTileset = LoadTextureFromImage(imTileset);
+    UnloadImage(imTileset);
     
     // TODO: Load tileset index rectangles
     /*
@@ -211,9 +225,10 @@ int main(void)
     fclose(dataFile);
     */
     
-    // Load player texture
-    //Texture2D texPlayer = LoadTexture("player.png");
-    
+    // Init player position
+    Rectangle player = { tilemap.position.x + 1*tilemap.tileSize + 8, tilemap.position.y + 1*tilemap.tileSize + 8, 8, 8 };
+    Rectangle oldPlayer = player;
+
     SetTargetFPS(60);
     //--------------------------------------------------------------------------------------    
 
@@ -223,7 +238,7 @@ int main(void)
         // Update
         //----------------------------------------------------------------------------------
         // Player movement logic
-        //oldPlayer = player;
+        oldPlayer = player;
         
         if (IsKeyDown(GLFW_KEY_DOWN)) player.y += 2;
         else if (IsKeyDown(GLFW_KEY_UP)) player.y -= 2;
@@ -231,43 +246,44 @@ int main(void)
         if (IsKeyDown(GLFW_KEY_RIGHT)) player.x += 2;
         else if (IsKeyDown(GLFW_KEY_LEFT)) player.x -= 2;
         
-        // Collision detection and resolution
-        /*
-        for (int y = 0; y < map.tileCountY; y++)
+        // LESSON 7: Collision detection and resolution
+        for (int y = 0; y < tilemap.tileCountY; y++)
         {
-            for (int x = 0; x < map.tileCountX; x++)
+            for (int x = 0; x < tilemap.tileCountX; x++)
             {
-                if ((tileCollisions[map.tile[y*map.tileCountX + x].value] == 0) &&
-                    CheckCollisionRecs(player, (Rectangle){ map.position.x + x*TILE_SIZE, map.position.y + y*TILE_SIZE, TILE_SIZE, TILE_SIZE }))
+                if ((tilemap.tiles[y*tilemap.tileCountX + x].collider == 0) &&
+                    CheckCollisionRecs(player, (Rectangle){ tilemap.position.x + x*tilemap.tileSize, tilemap.position.y + y*tilemap.tileSize, tilemap.tileSize, tilemap.tileSize }))
                 {
                     // Reset player position (undo player position update!)
                     player = oldPlayer;
                 }
             }
         }
-        */
         //----------------------------------------------------------------------------------
 
         // Draw
         //----------------------------------------------------------------------------------
-        rlClearScreenBuffers();     // Clear current framebuffer
+        rlClearScreenBuffers();             // Clear current framebuffer
+                  
+        DrawTilemap(tilemap, texTileset);   // Draw tilemap using provide tileset
         
-        DrawRectangleRec(player, (Color){ 255, 0, 0, 255 });
-            
-        //DrawTilemap(map, tileset, WHITE);
+        //DrawRectangleRec(player, (Color){ 255, 0, 0, 255 });
+        DrawTexture(texPlayer, player.x, player.y, (Color){ 255, 255, 255, 255 });
+        //DrawTexture(texTileset, 100, 100, (Color){ 255, 255, 255, 255 });
+        
+        rlglDraw();                         // Internal buffers drawing (2D data)
 
-        rlglDraw();                 // Internal buffers drawing (2D data)
-
-        glfwSwapBuffers(window);    // Swap buffers: show back buffer into front
-        PollInputEvents();          // Register input events (keyboard, mouse)
-        SyncFrame();                // Wait required time to target framerate
+        glfwSwapBuffers(window);            // Swap buffers: show back buffer into front
+        PollInputEvents();                  // Register input events (keyboard, mouse)
+        SyncFrame();                        // Wait required time to target framerate
         //----------------------------------------------------------------------------------
     }
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
-    //UnloadTexture(tileset);       // Unload tileset texture
-    //UnloadTilemap(tilemap)        // Unload tilemap data
+    UnloadTexture(texPlayer);       // Unload player texture
+    UnloadTexture(texTileset);      // Unload tileset texture
+    UnloadTilemap(tilemap);         // Unload tilemap data
     
     rlglClose();                    // Unload rlgl internal buffers and default shader/texture
     
@@ -369,23 +385,23 @@ static void SyncFrame(void)
 // LESSON 02: Graphic device initialization and management
 //----------------------------------------------------------------------------------
 // Initialize graphic device (OpenGL 3.3)
-static void InitGraphicsDevice(int screenWidth, int screenHeight)
+static void InitGraphicsDevice(int width, int height)
 {
     // Load OpenGL 3.3 supported extensions
     rlglLoadExtensions(glfwGetProcAddress);
 
     // Initialize OpenGL context (states and resources)
-    rlglInit(screenWidth, screenHeight);
+    rlglInit(width, height);
 
     // Initialize viewport and internal projection/modelview matrices
-    rlViewport(0, 0, screenWidth, screenHeight);
+    rlViewport(0, 0, width, height);
     rlMatrixMode(RL_PROJECTION);                        // Switch to PROJECTION matrix
     rlLoadIdentity();                                   // Reset current matrix (PROJECTION)
-    rlOrtho(0, screenWidth, screenHeight, 0, 0.0f, 1.0f); // Orthographic projection with top-left corner at (0,0)
+    rlOrtho(0, width, height, 0, 0.0f, 1.0f);           // Orthographic projection with top-left corner at (0,0)
     rlMatrixMode(RL_MODELVIEW);                         // Switch back to MODELVIEW matrix
     rlLoadIdentity();                                   // Reset current matrix (MODELVIEW)
 
-    rlClearColor(245, 245, 245, 255);                   // Define clear color
+    rlClearColor(0, 0, 0, 255);                         // Define clear color (BLACK)
     rlEnableDepthTest();                                // Enable DEPTH_TEST for 3D
 }
 
@@ -498,7 +514,7 @@ static Image LoadImage(const char *fileName)
     if ((fileExt = strrchr(fileName, '.')) != NULL)
     {
         // Check if file extension is supported
-        if (strcmp(fileExt, "bmp") == 0) image = LoadBMP(fileName);
+        if (strcmp(fileExt, ".bmp") == 0) image = LoadBMP(fileName);
     }
 
     return image;
@@ -565,16 +581,22 @@ static Image LoadBMP(const char *fileName)
 	int extraBytes = 0;
 	
 	if ((padding/8) > 0) extraBytes = 4 - (padding/8);
-	
+
 	// Read image data
-	for(int i = 0; i < imgHeight; i++)
+	for(int j = 0; j < imgHeight; j++)
 	{
-		for(int j = 0; j < imgWidth; j++)
+		for(int i = 0; i < imgWidth; i++)
 		{
-			fread(&imgData[i*imgWidth + j].b, 1, 1, bmpFile);
-			fread(&imgData[i*imgWidth + j].g, 1, 1, bmpFile);
-			fread(&imgData[i*imgWidth + j].r, 1, 1, bmpFile);
-            imgData[i*imgWidth + j].a = 255;    // Set alpha to fully opaque by default
+			fread(&imgData[j*imgWidth + i].b, 1, 1, bmpFile);
+			fread(&imgData[j*imgWidth + i].g, 1, 1, bmpFile);
+			fread(&imgData[j*imgWidth + i].r, 1, 1, bmpFile);
+            imgData[j*imgWidth + i].a = 255;    // Set alpha to fully opaque by default
+            
+            // NOTE: We consider a color key: MAGENTA RGB{ 255, 0, 255 },
+            // in that case, pixel will be transparent
+            if ((imgData[j*imgWidth + i].r == 255) && 
+                (imgData[j*imgWidth + i].g == 0) && 
+                (imgData[j*imgWidth + i].b == 255)) imgData[j*imgWidth + i].a = 0;
 		}
         
 		fread(&unusedData, extraBytes, 1, bmpFile);
@@ -585,11 +607,11 @@ static Image LoadBMP(const char *fileName)
 	image.data = (Color *)malloc(imgWidth*imgHeight*sizeof(Color));
 	
 	// Flip image vertically
-    for (int k = 0; k < imgHeight; k++)
+    for (int j = 0; j < imgHeight; j++)
 	{
-		for (int j = 0; j < imgWidth; j++)
+		for (int i = 0; i < imgWidth; i++)
 		{
-			image.data[k*imgWidth + j] = imgData[((imgHeight - 1) - k)*imgWidth + j];
+			image.data[j*imgWidth + i] = imgData[((imgHeight - 1) - j)*imgWidth + i];
 		}
 	}
 	
@@ -598,18 +620,21 @@ static Image LoadBMP(const char *fileName)
     image.width = imgWidth;
     image.height = imgHeight;
     
+    TraceLog(LOG_INFO, "[%s] BMP Image loaded successfully (%ix%i)", fileName, imgWidth, imgHeight);
+    
     return image;
 }
 
-/*
+// NOTE: Multiple versions od DrawTexture() are provided with multiple options
+
 // Draw texture in screen position coordinates
-void DrawTexture(Texture2D texture, Vector2 position, Color tint)
+static void DrawTexture(Texture2D texture, int posX, int posY, Color tint)
 {
-    DrawTextureEx(texture, position, 0, 1.0f, tint);
+    DrawTextureEx(texture, (Vector2){ posX, posY }, 0, 1.0f, tint);
 }
 
 // Draw a Texture2D with extended parameters
-void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint)
+static void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint)
 {
     Rectangle sourceRec = { 0, 0, texture.width, texture.height };
     Rectangle destRec = { (int)position.x, (int)position.y, texture.width*scale, texture.height*scale };
@@ -619,7 +644,7 @@ void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float sc
 }
 
 // Draw a part of a texture (defined by a rectangle)
-void DrawTextureRec(Texture2D texture, Rectangle sourceRec, Vector2 position, Color tint)
+static void DrawTextureRec(Texture2D texture, Rectangle sourceRec, Vector2 position, Color tint)
 {
     Rectangle destRec = { (int)position.x, (int)position.y, abs(sourceRec.width), abs(sourceRec.height) };
     Vector2 origin = { 0, 0 };
@@ -629,7 +654,7 @@ void DrawTextureRec(Texture2D texture, Rectangle sourceRec, Vector2 position, Co
 
 // Draw a part of a texture (defined by a rectangle) with 'pro' parameters
 // NOTE: origin is relative to destination rectangle size
-void DrawTexturePro(Texture2D texture, Rectangle sourceRec, Rectangle destRec, Vector2 origin, float rotation, Color tint)
+static void DrawTexturePro(Texture2D texture, Rectangle sourceRec, Rectangle destRec, Vector2 origin, float rotation, Color tint)
 {
     // Check if texture is valid
     if (texture.id != 0)
@@ -669,67 +694,101 @@ void DrawTexturePro(Texture2D texture, Rectangle sourceRec, Rectangle destRec, V
         rlDisableTexture();
     }
 }
-*/
 
 // LESSON 06: Tilemap data loading and drawing
 //----------------------------------------------------------------------------------
-static Tilemap LoadTilemap(const char *fileName)
+// Load tilemap data from file
+static Tilemap LoadTilemap(const char *valuesMap, const char *collidersMap)
 {
     Tilemap map = { 0 };
     const char *fileExt;
     
-    if ((fileExt = strrchr(fileName, '.')) != NULL)
+    if ((fileExt = strrchr(valuesMap, '.')) != NULL)
     {
         // Check if file extension is supported
-        if (strcmp(fileExt, "txt") == 0) 
+        if (strcmp(fileExt, ".txt") == 0) 
         {
-            int values[map.tileCountX*map.tileCountY];
             int counter = 0;
+            int temp = 0;
             
             // Read values from text file
-            FILE *dataFile = fopen("textmap.txt", "rt");
+            FILE *valuesFile = fopen(valuesMap, "rt");
             
-            while (!feof(dataFile))
+            while (!feof(valuesFile))
             {
-                fscanf(dataFile, "%i", &values[counter]);
+                fscanf(valuesFile, "%i", &temp);
                 counter++;
             }
             
-            fclose(dataFile);
+            rewind(valuesFile);        // Return to the beginning of the file, to read again
+
+            map.tiles = (Tile *)malloc(counter*sizeof(Tile));
+            
+            map.tileCountX = 12;
+            map.tileCountY = 8;
+
+            counter = 0;
+            
+            // Read values from text file
+            // NOTE: Colliders map data MUST match values data, 
+            // or we need to do a previous check like done with values data
+            FILE *collidersFile = fopen(collidersMap, "rt");
+            
+            while (!feof(valuesFile))
+            {
+                fscanf(valuesFile, "%i", &map.tiles[counter].value);
+                fscanf(collidersFile, "%i", &temp);
+                map.tiles[counter].collider = temp;
+                counter++;
+            }
+            
+            /*
+            for (int j = 0; j < map.tileCountY; j++)
+            {
+                for (int i = 0; i < map.tileCountX; i++)
+                {
+                    printf("%i ", map.tiles[j*map.tileCountX + i].value);
+                }
+                
+                printf("\n");
+            }
+            
+            printf("\n");
+            */
+            
+            fclose(valuesFile);
+            fclose(collidersFile);
         }
-        else if (strcmp(fileExt, "bmp") == 0) 
+        else if (strcmp(fileExt, ".bmp") == 0) 
         {
-            Image image = LoadImage(fileName);
+            Image image = LoadImage(valuesMap);
             
             map.tileCountX = image.width;
             map.tileCountY = image.height;
             
-            map.tiles = (Tile *)malloc(image.width*image.height*sizeof(Tile));
-            
-            //for (int j = 0; j < )
+            // TODO: Load tile data from image pixel data
         }
     }
 
     return map;
 }
 
+// Unload tilemap data from memory
 static void UnloadTilemap(Tilemap map)
 {
     if (map.tiles != NULL) free(map.tiles);
 }
 
-static void DrawTilemap(Tilemap map, Texture2D tileset, Vector2 position, float tileSize)
+// Draw tilemap using tileset
+static void DrawTilemap(Tilemap map, Texture2D tileset)
 {
     for (int y = 0; y < map.tileCountY; y++)
     {
         for (int x = 0; x < map.tileCountX; x++)
         {
-            //if (values[y*map.tileCountX + x] == 1) 
-            {
-                //DrawRectangle(position.x + x*tileSize, position.y + y*tileSize, tileSize, tileSize, RED);
-
-                //DrawTextureRec(texTileset, tilesetRecs[map.tile[y*map.tileCountX + x].value - 1], (Vector2){ position.x + x*tileSize, position.y + y*tileSize }, WHITE);
-            }
+            //DrawRectangle(map.position.x + x*map.tileSize, map.position.y + y*map.tileSize, map.tileSize, map.tileSize, (Color){ 255, 0, 0, 255 });
+            DrawTextureRec(tileset, tilesetRecs[map.tiles[y*map.tileCountX + x].value - 1], 
+                          (Vector2){ map.position.x + x*map.tileSize, map.position.y + y*map.tileSize }, (Color){ 255, 255, 255, 255 });
         }
     }
     

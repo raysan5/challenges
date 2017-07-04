@@ -1,8 +1,8 @@
 /*******************************************************************************************
 *
 *   Challenge 02:   DUNGEON GAME
-*   Lesson 05:      image and textures
-*   Description:    Image data loading, texture creation and drawing
+*   Lesson 02:      window management
+*   Description:    Window creation and management using GLFW3
 *
 *   NOTE: This example requires OpenGL 3.3 or ES2 for shaders support,
 *         OpenGL 1.1 does not support shaders but it can also be used.
@@ -187,100 +187,4 @@ static void DrawRectangleV(Vector2 position, Vector2 size, Color color)
         rlVertex2i(position.x + size.x, position.y + size.y);
         rlVertex2i(position.x + size.x, position.y);
     rlEnd();
-}
-
-
-
-
-
-
-
-
-
-typedef struct Image {
-    unsigned int width;
-    unsigned int height;
-    unsigned char *data;
-} Image;
-
-static Image LoadImage(const char *fileName)
-{
-    Image image = { 0 };
-	// Load BMP File... or create image Data!
-	int imgWidth;
-	int imgHeight;
-	short imgBpp;
-	int imgDataOffset;
-	//char *imgData;
-	
-	FILE *bmpFile = fopen(fileName, "rb");
-
-	fseek(bmpFile, 10, SEEK_SET);
-	fread(&imgDataOffset, 4, 1, bmpFile);
-	fseek(bmpFile, 18, SEEK_SET);
-	fread(&imgWidth, 4, 1, bmpFile); //reading the bmp Width
-	fread(&imgHeight, 4, 1, bmpFile); //reading the bmp Height
-	fseek(bmpFile, 28, SEEK_SET);
-	fread(&imgBpp, 2, 1, bmpFile);
-	
-	pixel *imgData = (pixel *)malloc(imgWidth * imgHeight * sizeof(pixel));
-	
-	fseek(bmpfile, imgDataOffset, SEEK_SET);
-	
-	// Calculate Image Padding per line
-	int padding = (imgWidth * imgBpp) % 32;
-	int unusedData = 0;
-	int extraBytes = 0;
-	
-	if ((padding/8) > 0) extraBytes = 4 - (padding/8);
-	
-	// Read image data
-	for(int i=0; i<imgHeight; i++)
-	{
-		for(int j=0; j<imgWidth; j++)
-		{
-			fread(&imgData[i*imgWidth + j].b, 1, 1, bmpfile);
-			fread(&imgData[i*imgWidth + j].g, 1, 1, bmpfile);
-			fread(&imgData[i*imgWidth + j].r, 1, 1, bmpfile);
-		}
-		fread(&unusedData, extraBytes, 1, bmpfile);
-	}
-	
-	fclose(bmpfile);
-	
-	pixel *imgDataFlip; 
-	imgDataFlip = new pixel [imgWidth * imgHeight]; 
-	
-	// Flip image vertically
-    for (int k=0; k < imgHeight; k++)
-	{
-		for(int j=0; j<imgWidth; j++)
-		{
-			imgDataFlip[k*imgWidth + j] = imgData[((imgHeight-1) - k)*imgWidth + j];
-		}
-	}
-	
-	free(imgData);
-}
-
-// Texture2D type
-// NOTE: Data stored in GPU memory
-typedef struct Texture2D {
-    unsigned int id;            // OpenGL texture id
-    unsigned int width;         // Texture base width
-    unsigned int height;        // Texture base height
-} Texture2D;
-
-static Texture2D LoadTextureFromImage(Image image)
-{
-    Texture2D texture = { 0 };
-
-    texture.id = rlglLoadTexture(image.data, image.width, image.height, image.format, image.mipmaps);
-
-    texture.width = image.width;
-    texture.height = image.height;
-    texture.mipmaps = image.mipmaps;
-    texture.format = image.format;
-
-    return texture;
 }

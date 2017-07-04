@@ -1,8 +1,8 @@
 /*******************************************************************************************
 *
 *   Challenge 02:   DUNGEON GAME
-*   Lesson 02:      window management
-*   Description:    Window creation and management using GLFW3
+*   Lesson 01:      rlgl module intro
+*   Description:    Introduction to rlgl and immediate mode
 *
 *   NOTE: This example requires OpenGL 3.3 or ES2 for shaders support,
 *         OpenGL 1.1 does not support shaders but it can also be used.
@@ -35,6 +35,7 @@
 
 // GLFW3: Error callback function to be registered
 static void ErrorCallback(int error, const char* description);
+static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 static void InitWindow(int screenWidth, int screenHeight);
 static void CloseWindow(void);
@@ -55,26 +56,13 @@ int main(void)
     
     InitWindow(screenWidth, screenHeight);      // Initialize Window using GLFW3
     
-    rlglLoadExtensions(glfwGetProcAddress);     // Load OpenGL 3.3 supported extensions
+    InitGraphicsDevice(screenWidth, screenHeight);
     
-    rlglInit(screenWidth, screenHeight);        // Initialize OpenGL context (states and resources)
-    
-    //InitGraphicDevice();
-
-    // Initialize viewport and internal projection/modelview matrices
-    rlViewport(0, 0, screenWidth, screenHeight);
-    rlMatrixMode(RL_PROJECTION);                        // Switch to PROJECTION matrix
-    rlLoadIdentity();                                   // Reset current matrix (PROJECTION)
-    rlOrtho(0, screenWidth, screenHeight, 0, 0.0f, 1.0f); // Orthographic projection with top-left corner at (0,0)
-    rlMatrixMode(RL_MODELVIEW);                         // Switch back to MODELVIEW matrix
-    rlLoadIdentity();                                   // Reset current matrix (MODELVIEW)
-
-    rlClearColor(245, 245, 245, 255);                   // Define clear color
-    rlEnableDepthTest();                                // Enable DEPTH_TEST for 3D
+    SetTargetFPS(60);
     //--------------------------------------------------------------------------------------    
 
     // Main game loop    
-    while (!glfwWindowShouldClose(window)) 
+    while (!glfwWindowShouldClose(window))
     {
         // Update
         //----------------------------------------------------------------------------------
@@ -85,7 +73,7 @@ int main(void)
         //----------------------------------------------------------------------------------
         rlClearScreenBuffers();             // Clear current framebuffer
         
-            //DrawRectangleV((Vector2){ 10.0f, 10.0f }, (Vector2){ 780.0f, 20.0f }, DARKGRAY);
+            DrawRectangleV((Vector2){ 10.0f, 10.0f }, (Vector2){ 780.0f, 20.0f }, DARKGRAY);
 
             rlglDraw();     // NOTE: Internal buffers drawing (2D data)
             
@@ -98,8 +86,7 @@ int main(void)
     //--------------------------------------------------------------------------------------
     rlglClose();                    // Unload rlgl internal buffers and default shader/texture
     
-    glfwDestroyWindow(window);      // Close window
-    glfwTerminate();                // Free GLFW3 resources
+    CloseWindow();
     //--------------------------------------------------------------------------------------
     
     return 0;
@@ -115,10 +102,18 @@ static void ErrorCallback(int error, const char* description)
     TraceLog(ERROR, description);
 }
 
-static void InitWindow(int screenWidth, int screenHeight)
+// GLFW3: Keyboard callback
+static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    {
+        glfwSetWindowShouldClose(window, GL_TRUE);
+    }
+}
+
+void InitWindow(int screenWidth, int screenHeight)
 {
     // GLFW3 Initialization + OpenGL 3.3 Context + Extensions
-    //--------------------------------------------------------
     glfwSetErrorCallback(ErrorCallback);
     
     if (!glfwInit())
@@ -135,7 +130,7 @@ static void InitWindow(int screenWidth, int screenHeight)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
    
-    GLFWwindow *window = glfwCreateWindow(screenWidth, screenHeight, "rlgl standalone", NULL, NULL);
+    window = glfwCreateWindow(screenWidth, screenHeight, "rlgl standalone", NULL, NULL);
     
     if (!window)
     {
@@ -150,7 +145,32 @@ static void InitWindow(int screenWidth, int screenHeight)
     
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
-    //--------------------------------------------------------
+}
+
+void CloseWindow(void)
+{
+    glfwDestroyWindow(window);      // Close window
+    glfwTerminate();                // Free GLFW3 resources
+}
+
+void InitGraphicsDevice(int screenWidth, int screenHeight)
+{
+    // Load OpenGL 3.3 supported extensions
+    rlglLoadExtensions(glfwGetProcAddress);
+
+    // Initialize OpenGL context (states and resources)
+    rlglInit(screenWidth, screenHeight);
+
+    // Initialize viewport and internal projection/modelview matrices
+    rlViewport(0, 0, screenWidth, screenHeight);
+    rlMatrixMode(RL_PROJECTION);                        // Switch to PROJECTION matrix
+    rlLoadIdentity();                                   // Reset current matrix (PROJECTION)
+    rlOrtho(0, screenWidth, screenHeight, 0, 0.0f, 1.0f); // Orthographic projection with top-left corner at (0,0)
+    rlMatrixMode(RL_MODELVIEW);                         // Switch back to MODELVIEW matrix
+    rlLoadIdentity();                                   // Reset current matrix (MODELVIEW)
+
+    rlClearColor(245, 245, 245, 255);                   // Define clear color
+    rlEnableDepthTest();                                // Enable DEPTH_TEST for 3D
 }
 
 // Draw rectangle using rlgl OpenGL 1.1 style coding (translated to OpenGL 3.3 internally)

@@ -17,10 +17,10 @@
 *   Compile example using:
 *       gcc -o $(NAME_PART).exe $(FILE_NAME) rlgl.o -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
 *
-*   This example has been created using raylib 1.5 (www.raylib.com)
+*   This example has been created using raylib 1.7 (www.raylib.com)
 *   raylib is licensed under an unmodified zlib/libpng license (View raylib.h for details)
 *
-*   Copyright (c) 2015 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2017 Ramon Santamaria (@raysan5)
 *
 ********************************************************************************************/
 
@@ -29,10 +29,6 @@
 #define RLGL_STANDALONE
 #include "rlgl.h"               // rlgl library: OpenGL 1.1 immediate-mode style coding
 
-#define RED        (Color){ 230, 41, 55, 255 }     // Red
-#define RAYWHITE   (Color){ 245, 245, 245, 255 }   // My own White (raylib logo)
-#define DARKGRAY   (Color){ 80, 80, 80, 255 }      // Dark Gray
-
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
 //----------------------------------------------------------------------------------
@@ -40,9 +36,6 @@ static void ErrorCallback(int error, const char* description);
 static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 // Drawing functions (uses rlgl functionality)
-static void DrawGrid(int slices, float spacing);
-static void DrawCube(Vector3 position, float width, float height, float length, Color color);
-static void DrawCubeWires(Vector3 position, float width, float height, float length, Color color);
 static void DrawRectangleV(Vector2 position, Vector2 size, Color color);
 
 //----------------------------------------------------------------------------------

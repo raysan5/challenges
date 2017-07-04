@@ -2,7 +2,7 @@
 *
 *   Challenge 01:   BLOCKS GAME
 *   Lesson 04:      collisions
-*   Description:    COllision detection and resolution
+*   Description:    Collision detection and resolution
 *
 *   Compile example using:
 *       gcc -o $(NAME_PART).exe $(FILE_NAME) -lraylib -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99

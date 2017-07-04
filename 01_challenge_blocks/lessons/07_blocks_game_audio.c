@@ -16,10 +16,10 @@
 
 #include "raylib.h"
 
-#include <math.h>               // Required for: fabs()
+#include <math.h>               // Basic math functionality: fabs()
 
 //----------------------------------------------------------------------------------
-// Some Defines
+// Useful values definitions 
 //----------------------------------------------------------------------------------
 #define PLAYER_LIFES             5
 #define BRICKS_LINES             5
@@ -68,6 +68,7 @@ int main()
     const int screenWidth = 800;
     const int screenHeight = 450;
 
+    // LESSON 05: Image struct
     InitWindow(screenWidth, screenHeight, "CHALLENGE 01: BLOCKS GAME");
     
     // NOTE: If using textures, declare Texture2D variables here (after InitWindow)
@@ -111,6 +112,13 @@ int main()
         }
     }
     
+    // LESSON 05: Textures loading and drawing
+    
+    // LESSON 06: SpriteFonts loading and text drawing
+    
+    // LESSSON 07: Sounds and music loading and playing
+    
+    
     SetTargetFPS(60);               // Set desired framerate (frames per second)
     //--------------------------------------------------------------------------------------
     
@@ -141,8 +149,8 @@ int main()
             { 
                 // Update GAMEPLAY screen data here!
                 
-                // Pause button logic
-                if (IsKeyPressed('P')) gamePaused = !gamePaused;
+                // LESSON 03: Inputs management (keyboard, mouse)
+                if (IsKeyPressed('P')) gamePaused = !gamePaused;    // Pause button logic
 
                 if (!gamePaused)
                 {
@@ -164,6 +172,9 @@ int main()
                         // Collision logic: ball vs screen-limits
                         if (((ball.position.x + ball.radius) >= screenWidth) || ((ball.position.x - ball.radius) <= 0)) ball.speed.x *= -1;
                         if ((ball.position.y - ball.radius) <= 0) ball.speed.y *= -1;
+                        
+                        
+                        // LESSON 04: Collision detection and resolution
                         
                         // Collision logic: ball vs player
                         if (CheckCollisionCircleRec(ball.position, ball.radius, player.bounds))
@@ -261,14 +272,10 @@ int main()
                 { 
                     // Draw GAMEPLAY screen here!
                     
-                    // Draw player bar
-                    DrawRectangle(player.position.x, player.position.y, player.size.x, player.size.y, BLACK);
-
-                    // Draw player lives
-                    for (int i = 0; i < player.lifes; i++) DrawRectangle(20 + 40*i, screenHeight - 30, 35, 10, LIGHTGRAY);
-                    
-                    // Draw ball
-                    DrawCircleV(ball.position, ball.radius, MAROON);
+                    // LESSON 02: Draw basic shapes (circle, rectangle)
+                    DrawRectangle(player.position.x, player.position.y, player.size.x, player.size.y, BLACK);   // Draw player bar
+                    for (int i = 0; i < player.lifes; i++) DrawRectangle(20 + 40*i, screenHeight - 30, 35, 10, LIGHTGRAY); // Draw player lives
+                    DrawCircleV(ball.position, ball.radius, MAROON);    // Draw ball
                     
                     // Draw bricks
                     for (int j = 0; j < BRICKS_LINES; j++)

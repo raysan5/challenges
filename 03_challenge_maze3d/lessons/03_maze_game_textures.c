@@ -1,8 +1,8 @@
 /*******************************************************************************************
 *
 *   Challenge 03:   MAZE GAME
-*   Lesson 01:      OpenGL intro
-*   Description:    Introduction to OpenGL 3.3 Core profile
+*   Lesson 03:      image loading
+*   Description:    Image loading and texture creation
 *
 *   NOTE: This example requires the following header-only files:
 *       glad.h      - OpenGL extensions loader (stripped to only required extensions)

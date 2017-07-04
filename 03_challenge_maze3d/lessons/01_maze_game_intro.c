@@ -5,8 +5,9 @@
 *   Description:    Introduction to OpenGL 3.3 Core profile
 *
 *   NOTE: This example requires the following header-only files:
-*       glad.h    - OpenGL extensions loader (stripped to only required extensions)
-*       raymath.h - Vector and matrix math functions
+*       glad.h      - OpenGL extensions loader (stripped to only required extensions)
+*       raymath.h   - Vector and matrix math functions
+*       stb_image.h - Multiple formats image loading (BMP, PNG, TGA, JPG...)
 *
 *   Compile example using:
 *       gcc -o $(NAME_PART).exe $(FILE_NAME) -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99

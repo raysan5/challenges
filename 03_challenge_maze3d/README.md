@@ -158,6 +158,9 @@ Mesh LoadOBJ(const char *fileName);             // Load mesh from OBJ file
 We strongly encourage you using the online [raylib forum](forum.raylib.com) to discuss challenges with other students. However, we recommend not to look at any source code written by other students or share your source code with others **while working on the challenge**.
 
 ## License
-All code provided for this challenge is licensed under MIT License. Check [LICENSE](../LICENSE) for further details.
+This lecture is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
 
+Challenge code is licensed under an unmodified zlib/libpng license.
+
+Check [LICENSE](../LICENSE) for further details.
 *Copyright (c) 2017 Ramon Santamaria ([@raysan5](https://twitter.com/raysan5))*

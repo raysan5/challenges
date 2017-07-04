@@ -259,7 +259,7 @@ int main(void)
     
     // Define our camera
     Camera camera;
-    camera.position = (Vector3){ 10, 10, 10 };
+    camera.position = VectorOne();
     camera.target = VectorZero();
     camera.up = (Vector3){ 0, 1, 0 };
     camera.fovy = 60.0f;
@@ -294,8 +294,8 @@ int main(void)
     {
         // Update
         //----------------------------------------------------------------------------------
-        //UpdateCamera(&camera);
-        //matModelview = MatrixLookAt(camera.position, camera.target, camera.up);
+        UpdateCamera(&camera);
+        matModelview = MatrixLookAt(camera.position, camera.target, camera.up);
         //----------------------------------------------------------------------------------
 
         // Draw
@@ -381,6 +381,8 @@ static void InitWindow(int width, int height)
     glfwSetMouseButtonCallback(window, MouseButtonCallback);    // Track mouse button events
     glfwSetCursorPosCallback(window, MouseCursorPosCallback);   // Track mouse position changes
     
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);// Disable cursor for first person camera
+    
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 }
@@ -411,7 +413,7 @@ static void InitGraphicsDevice(int width, int height)
 
     // Init state: Depth test
     glDepthFunc(GL_LEQUAL);                                 // Type of depth testing to apply
-    glDisable(GL_DEPTH_TEST);                               // Disable depth testing for 2D (only used for 3D)
+    glEnable(GL_DEPTH_TEST);                                // Enable depth testing for 3D
 
     // Init state: Blending mode
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);      // Color blending function (how colors are mixed)
@@ -1115,8 +1117,6 @@ static Mesh GenMeshCubicmap(Image cubicmap, float cubeSize)
 //----------------------------------------------------------------------------------
 static void UpdateCamera(Camera *camera)
 {
-    // TODO: DisableCursor();
-    
     // Some useful defines
     #define PLAYER_MOVEMENT_SENSITIVITY                     20.0f
     #define CAMERA_MOUSE_MOVE_SENSITIVITY                   0.003f
@@ -1128,7 +1128,7 @@ static void UpdateCamera(Camera *camera)
     #define CAMERA_FIRST_PERSON_STEP_DIVIDER                30.0f
     #define CAMERA_FIRST_PERSON_WAVING_DIVIDER              200.0f
     
-    static float playerEyesPosition = 1.85f;              // Default player eyes position from ground (in meters) 
+    static float playerEyesPosition = 0.6f;              // Default player eyes position from ground (in meters) 
 
     static int cameraMoveControl[6]  = { 'W', 'S', 'D', 'A', 'E', 'Q' };
     static int cameraPanControlKey = 2;                   // raylib: MOUSE_MIDDLE_BUTTON
@@ -1770,7 +1770,7 @@ static Shader LoadShaderDefault(void)
         "in vec2 vertexTexCoord;            \n"
         "in vec3 vertexNormal;              \n"
         "out vec2 fragTexCoord;             \n"
-        "out vec4 fragNormal;               \n"
+        "out vec3 fragNormal;               \n"
         "uniform mat4 mvpMatrix;            \n"
         "void main()                        \n"
         "{                                  \n"
@@ -1781,9 +1781,9 @@ static Shader LoadShaderDefault(void)
 
     // Fragment shader directly defined, no external file required
     char fDefaultShaderStr[] =
-        "#version 330       \n"
+        "#version 330                       \n"
         "in vec2 fragTexCoord;              \n"
-        "in vec4 fragNormal;                \n"
+        "in vec3 fragNormal;                \n"
         "out vec4 finalColor;               \n"
         "uniform sampler2D texture0;        \n"
         "uniform vec4 colDiffuse;           \n"
@@ -1807,7 +1807,7 @@ static Shader LoadShaderDefault(void)
 
     glShaderSource(vertexShader, 1, &pvs, NULL);
     glShaderSource(fragmentShader, 1, &pfs, NULL);
-
+    
     glCompileShader(vertexShader);
     glCompileShader(fragmentShader);
 

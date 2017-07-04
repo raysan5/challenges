@@ -61,6 +61,10 @@ This game is developed using [OpenGL](https://en.wikipedia.org/wiki/OpenGL) grap
 
 # License
 
-All challenges and solutions are licensed under MIT License. Check [LICENSE](LICENSE) for further details.
+All challenges lectures are licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
+
+All challenges code is licensed under an unmodified zlib/libpng license. 
+
+Check [LICENSE](LICENSE) for further details.
 
 *Copyright (c) 2017 Ramon Santamaria ([@raysan5](https://twitter.com/raysan5))*

@@ -68,7 +68,6 @@ typedef enum {
 typedef struct Image {
     unsigned int width;         // Image base width
     unsigned int height;        // Image base height
-    unsigned int mipmaps;       // Mipmap levels, 1 by default
     unsigned int format;        // Data format (TextureFormat type)
     unsigned char *data;        // Image raw data
 } Image;
@@ -153,6 +152,8 @@ typedef struct Model {
     Material material;      // Shader and textures data
 } Model;
 
+#define WHITE   (Color){ 255, 255, 255, 255 }
+
 //----------------------------------------------------------------------------------
 // Global Variables Declaration
 //----------------------------------------------------------------------------------
@@ -160,8 +161,9 @@ GLFWwindow *window;
 
 static Texture2D texDefault;
 static Shader shdrDefault;
-static Matrix matProjection;
-static Matrix matModelview;
+
+static Matrix matProjection;                // Projection matrix to draw our world
+static Matrix matModelview;                 // Modelview matrix to draw our world
 
 static double currentTime, previousTime;    // Used to track timmings
 static double frameTime = 0.0;              // Time measure for one frame
@@ -189,6 +191,7 @@ static void MouseCursorPosCallback(GLFWwindow *window, double x, double y);
 
 void TraceLog(int msgType, const char *text, ...);      // Show trace log messages (LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DEBUG)
 static Shader LoadShaderDefault(void);                  // Load default shader (basic shader)
+static float *MatrixToFloat(Matrix mat);                // Get float values array from Matrix
 
 // LESSON 01: Window and context creation, extensions loading
 //----------------------------------------------------------------------------------
@@ -211,16 +214,18 @@ static void PollInputEvents(void);                  // Poll (store) all input ev
 //----------------------------------------------------------------------------------
 static Image LoadImage(const char *fileName);       // Load image data to CPU memory (RAM)
 static void UnloadImage(Image image);               // Unload image data from CPU memory (RAM)
+static Color *GetImageData(Image image);            // Get pixel data from image as Color array
 static Texture2D LoadTexture(unsigned char *data, int width, int height, int format);  // Load texture data in GPU memory (VRAM)
 static void UnloadTexture(Texture2D texture);       // Unload texture data from GPU memory (VRAM)
 
-static void DrawTexture(Texture2D texture, Vector2 position, Color tint);   // Draw texture in screen position coordinates
+//static void DrawTexture(Texture2D texture, Vector2 position, Color tint);   // Draw texture in screen position coordinates
 
 // LESSON 04: Level map loading, vertex buffer creation
 //----------------------------------------------------------------------------------
-static Model LoadCubicmap(Image cubicmap, float cubeSize);  // Load cubicmap (pixels image) into a 3d model
+static Model LoadModel(Mesh mesh, Texture2D diffuse);       // Load cubicmap (pixels image) into a 3d model
 static void UnloadModel(Model model);                       // Unload model data from memory (RAM and VRAM)
 static void UploadMeshData(Mesh *mesh);                     // Upload mesh data into VRAM
+static Mesh GenMeshCubicmap(Image cubicmap, float cubeSize);//
 
 static void DrawModel(Model model, Vector3 position, float scale, Color tint);
 
@@ -234,8 +239,8 @@ static Vector3 ResolveCollisionCubicmap(Image cubicmap, Vector3 mapPosition, Vec
 
 // LESSON 07: Models loading and drawing
 //----------------------------------------------------------------------------------
-static Model LoadModel(const char *fileName);
 static Mesh LoadOBJ(const char *fileName);
+
 
 //----------------------------------------------------------------------------------
 // Main Entry point
@@ -252,6 +257,35 @@ int main(void)
     
     InitGraphicsDevice(screenWidth, screenHeight);  // Initialize graphic device (OpenGL)
     
+    // Define our camera
+    Camera camera;
+    camera.position = (Vector3){ 10, 10, 10 };
+    camera.target = VectorZero();
+    camera.up = (Vector3){ 0, 1, 0 };
+    camera.fovy = 60.0f;
+    
+    // Calculate projection matrix (from perspective) and view matrix from camera look at
+    matProjection = MatrixPerspective(camera.fovy, (double)screenWidth/(double)screenHeight, 0.01, 1000.0);
+    MatrixTranspose(&matProjection);
+    matModelview = MatrixLookAt(camera.position, camera.target, camera.up);
+    
+    // 2D projection
+    // matProjection = MatrixOrtho(0.0, screenWidth, screenHeight, 0.0, 0.0, 1.0);
+    // MatrixTranspose(&matProjection);
+    // matModelview = MatrixIdentity();
+    
+    // Load cubicmap mesh from image
+    Image imMap = LoadImage("resources/map04.png");
+    Mesh meshMap = GenMeshCubicmap(imMap, 1.0f);
+    UploadMeshData(&meshMap);
+    UnloadImage(imMap);
+    
+    // Load model diffuse texture
+    Image imDiffuse = LoadImage("resources/cubemap_atlas01.png");
+    Texture2D texDiffuse = LoadTexture(imDiffuse.data, imDiffuse.width, imDiffuse.height, imDiffuse.format);
+    Model map = LoadModel(meshMap, texDiffuse);
+    UnloadImage(imDiffuse);
+    
     SetTargetFPS(60);
     //--------------------------------------------------------------------------------------    
 
@@ -260,22 +294,26 @@ int main(void)
     {
         // Update
         //----------------------------------------------------------------------------------
-        // ...
+        //UpdateCamera(&camera);
+        //matModelview = MatrixLookAt(camera.position, camera.target, camera.up);
         //----------------------------------------------------------------------------------
 
         // Draw
         //----------------------------------------------------------------------------------
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);     // Clear used buffers: Color and Depth (Depth is used for 3D)
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);                   // Set clear color (black)
         
-        glfwSwapBuffers(window);
+        DrawModel(map, VectorZero(), 1.0f, WHITE);
         
-        PollInputEvents();          // Register input events
+        glfwSwapBuffers(window);            // Swap buffers: show back buffer into front
+        PollInputEvents();                  // Register input events (keyboard, mouse)
+        SyncFrame();                        // Wait required time to target framerate
         //----------------------------------------------------------------------------------
     }
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
+    UnloadModel(map);
+    
     CloseWindow();
     //--------------------------------------------------------------------------------------
     
@@ -339,7 +377,9 @@ static void InitWindow(int width, int height)
     
     glfwSetWindowPos(window, 200, 200);
     
-    glfwSetKeyCallback(window, KeyCallback);
+    glfwSetKeyCallback(window, KeyCallback);                    // Track keyboard events
+    glfwSetMouseButtonCallback(window, MouseButtonCallback);    // Track mouse button events
+    glfwSetCursorPosCallback(window, MouseCursorPosCallback);   // Track mouse position changes
     
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
@@ -369,10 +409,6 @@ static void InitGraphicsDevice(int width, int height)
     // Init default Shader (customized for GL 3.3 and ES2)
     shdrDefault = LoadShaderDefault();
 
-    // Init internal matProjection and matModelview matrices
-    matProjection = MatrixIdentity();
-    matModelview = MatrixIdentity();
-
     // Init state: Depth test
     glDepthFunc(GL_LEQUAL);                                 // Type of depth testing to apply
     glDisable(GL_DEPTH_TEST);                               // Disable depth testing for 2D (only used for 3D)
@@ -387,12 +423,6 @@ static void InitGraphicsDevice(int width, int height)
     glFrontFace(GL_CCW);                                    // Front face are defined counter clockwise (default)
     glEnable(GL_CULL_FACE);                                 // Enable backface culling
 
-#if defined(GRAPHICS_API_OPENGL_11)
-    // Init state: Color hints (deprecated in OpenGL 3.0+)
-    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);      // Improve quality of color and texture coordinate interpolation
-    glShadeModel(GL_SMOOTH);                                // Smooth shading between vertex (vertex colors interpolation)
-#endif
-
     // Init state: Color/Depth buffers clear
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);                   // Set clear color (black)
     glClearDepth(1.0f);                                     // Set clear depth value (default)
@@ -400,19 +430,12 @@ static void InitGraphicsDevice(int width, int height)
 
     TraceLog(LOG_INFO, "OpenGL default states initialized successfully");
 
-    // Initialize viewport and matProjection/matModelview matrices
+    // Initialize viewport
     glViewport(0, 0, width, height);
     
-    /*
-    glMatrixMode(RL_PROJECTION);                        // Switch to PROJECTION matrix
-    glLoadIdentity();                                   // Reset current matrix (PROJECTION)
-    glOrtho(0, screenWidth, screenHeight, 0, 0.0f, 1.0f); // Orthographic matProjection with top-left corner at (0,0)
-    glMatrixMode(RL_MODELVIEW);                         // Switch back to MODELVIEW matrix
-    glLoadIdentity();                                   // Reset current matrix (MODELVIEW)
-
-    glClearColor(245, 245, 245, 255);                   // Define clear color
-    glEnableDepthTest();                                // Enable DEPTH_TEST for 3D
-    */
+    // Init internal matProjection and matModelview matrices
+    matProjection = MatrixIdentity();
+    matModelview = MatrixIdentity();
 }
 
 // Close window and free resources
@@ -539,18 +562,15 @@ static Image LoadImage(const char *fileName)
             if (imFile != NULL)
             {
                 // NOTE: Using stb_image to load images (Supports: BMP, TGA, PNG, JPG, ...)
-                image.data = stbi_load_from_file(imFile, &imgWidth, &imgHeight, &imgBpp, 0);
+                image.data = stbi_load_from_file(imFile, &imgWidth, &imgHeight, &imgBpp, 4);
                 
                 fclose(imFile);
 
                 image.width = imgWidth;
                 image.height = imgHeight;
-                image.mipmaps = 1;
-
-                if (imgBpp == 1) image.format = UNCOMPRESSED_GRAYSCALE;
-                else if (imgBpp == 2) image.format = UNCOMPRESSED_GRAY_ALPHA;
-                else if (imgBpp == 3) image.format = UNCOMPRESSED_R8G8B8;
-                else if (imgBpp == 4) image.format = UNCOMPRESSED_R8G8B8A8;
+                image.format = UNCOMPRESSED_R8G8B8A8;
+                
+                TraceLog(LOG_INFO, "Image loaded successfully (%ix%i)", image.width, image.height);
             }
         }
     }
@@ -633,14 +653,14 @@ static Texture2D LoadTexture(unsigned char *data, int width, int height, int for
 // LESSON 04: Level map loading, vertex buffer creation
 //----------------------------------------------------------------------------------
 
-// Load cubicmap (pixels image) into a 3d model
-// NOTE: Mesh data is generated from 2d image data
-static Model LoadCubicmap(Image cubicmap, float cubeSize)
+// Load model (initialize)
+static Model LoadModel(Mesh mesh, Texture2D diffuse)
 {
     Model model = { 0 };
     
-    // TODO: model.mesh = GenMeshCubicmap(cubicmap, cubeSize);
-    // TODO: model.material = LoadMaterialDefault();
+    model.mesh = mesh;
+    model.material.shader = shdrDefault;
+    model.material.texDiffuse = diffuse;
     model.transform = MatrixIdentity();
     
     return model;
@@ -660,15 +680,14 @@ static void DrawModel(Model model, Vector3 position, float scale, Color tint)
     // Get transform matrix (scale -> translation)
     Matrix matScale = MatrixScale(scale, scale, scale);
     Matrix matTranslation = MatrixTranslate(position.x, position.y, position.z);
-    
     Matrix matTransform = MatrixMultiply(matScale, matTranslation);
 
     // Combine model transform matrix with matrix generated by function parameters (matTransform)
     model.transform = MatrixMultiply(model.transform, matTransform);
-    model.material.colDiffuse = tint;       // Assign tint as diffuse color
+    
+    model.material.colDiffuse = tint;           // Assign tint as diffuse color
 
-    // TODO: Draw model
-    glUseProgram(model.material.shader.id);       // Bind material shader
+    glUseProgram(model.material.shader.id);     // Bind material shader
 
     // Upload to shader material.colDiffuse
     glUniform4f(model.material.shader.colDiffuseLoc, 
@@ -685,25 +704,17 @@ static void DrawModel(Model model, Vector3 position, float scale, Color tint)
                     (float)model.material.colSpecular.b/255, 
                     (float)model.material.colSpecular.a/255);
 
-    // At this point the matModelview matrix just contains the view matrix (camera)
-    // That's because Begin3dMode() sets it an no model-drawing function modifies it, all use rlPushMatrix() and rlPopMatrix()
-    Matrix matView = matModelview;         // View matrix (camera)
-    Matrix matProjection = matProjection;  // Projection matrix (perspective)
-
-    // Calculate model-view matrix combining matModel and matView
-    Matrix matModelView = MatrixMultiply(model.transform, matView);           // Transform to camera-space coordinates
-    
     // Set shader textures (diffuse, normal, specular)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, model.material.texDiffuse.id);
-    glUniform1i(model.material.shader.mapTexture0Loc, 0);         // Diffuse texture fits in active texture unit 0
+    glUniform1i(model.material.shader.mapTexture0Loc, 0);           // Diffuse texture fits in active texture unit 0
 
     if ((model.material.texNormal.id != 0) && (model.material.shader.mapTexture1Loc != -1))
     {
         // Enable shader normal map
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, model.material.texNormal.id);
-        glUniform1i(model.material.shader.mapTexture1Loc, 1);     // Normal texture fits in active texture unit 1
+        glUniform1i(model.material.shader.mapTexture1Loc, 1);       // Normal texture fits in active texture unit 1
     }
 
     if ((model.material.texSpecular.id != 0) && (model.material.shader.mapTexture2Loc != -1))
@@ -711,14 +722,14 @@ static void DrawModel(Model model, Vector3 position, float scale, Color tint)
         // Enable shader specular map
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, model.material.texSpecular.id);
-        glUniform1i(model.material.shader.mapTexture2Loc, 2);    // Specular texture fits in active texture unit 2
+        glUniform1i(model.material.shader.mapTexture2Loc, 2);       // Specular texture fits in active texture unit 2
     }
 
     // Bind mesh VAO (vertex array objects)
     glBindVertexArray(model.mesh.vaoId);
     
     // Calculate model-view-matProjection matrix (MVP)
-    Matrix matMVP = MatrixMultiply(matModelview, matProjection);        // Transform to screen-space coordinates
+    Matrix matMVP = MatrixMultiply(matModelview, matProjection);    // Transform to screen-space coordinates
 
     // Send combined model-view-matProjection matrix to shader
     glUniformMatrix4fv(model.material.shader.mvpLoc, 1, false, MatrixToFloat(matMVP));
@@ -744,6 +755,362 @@ static void DrawModel(Model model, Vector3 position, float scale, Color tint)
     glUseProgram(0);                    // Unbind shader program
 }
 
+// Generate cubicmap mesh from image data
+static Mesh GenMeshCubicmap(Image cubicmap, float cubeSize)
+{
+    Mesh mesh = { 0 };
+
+    Color *cubicmapPixels = GetImageData(cubicmap);
+
+    int mapWidth = cubicmap.width;
+    int mapHeight = cubicmap.height;
+
+    // NOTE: Max possible number of triangles numCubes * (12 triangles by cube)
+    int maxTriangles = cubicmap.width*cubicmap.height*12;
+
+    int vCounter = 0;       // Used to count vertices
+    int tcCounter = 0;      // Used to count texcoords
+    int nCounter = 0;       // Used to count normals
+
+    float w = cubeSize;
+    float h = cubeSize;
+    float h2 = cubeSize;
+
+    Vector3 *mapVertices = (Vector3 *)malloc(maxTriangles*3*sizeof(Vector3));
+    Vector2 *mapTexcoords = (Vector2 *)malloc(maxTriangles*3*sizeof(Vector2));
+    Vector3 *mapNormals = (Vector3 *)malloc(maxTriangles*3*sizeof(Vector3));
+
+    // Define the 6 normals of the cube, we will combine them accordingly later...
+    Vector3 n1 = { 1.0f, 0.0f, 0.0f };
+    Vector3 n2 = { -1.0f, 0.0f, 0.0f };
+    Vector3 n3 = { 0.0f, 1.0f, 0.0f };
+    Vector3 n4 = { 0.0f, -1.0f, 0.0f };
+    Vector3 n5 = { 0.0f, 0.0f, 1.0f };
+    Vector3 n6 = { 0.0f, 0.0f, -1.0f };
+
+    // NOTE: We use texture rectangles to define different textures for top-bottom-front-back-right-left (6)
+    typedef struct RectangleF {
+        float x;
+        float y;
+        float width;
+        float height;
+    } RectangleF;
+
+    RectangleF rightTexUV = { 0.0f, 0.0f, 0.5f, 0.5f };
+    RectangleF leftTexUV = { 0.5f, 0.0f, 0.5f, 0.5f };
+    RectangleF frontTexUV = { 0.0f, 0.0f, 0.5f, 0.5f };
+    RectangleF backTexUV = { 0.5f, 0.0f, 0.5f, 0.5f };
+    RectangleF topTexUV = { 0.0f, 0.5f, 0.5f, 0.5f };
+    RectangleF bottomTexUV = { 0.5f, 0.5f, 0.5f, 0.5f };
+
+    for (int z = 0; z < mapHeight; ++z)
+    {
+        for (int x = 0; x < mapWidth; ++x)
+        {
+            // Define the 8 vertex of the cube, we will combine them accordingly later...
+            Vector3 v1 = { w*(x - 0.5f), h2, h*(z - 0.5f) };
+            Vector3 v2 = { w*(x - 0.5f), h2, h*(z + 0.5f) };
+            Vector3 v3 = { w*(x + 0.5f), h2, h*(z + 0.5f) };
+            Vector3 v4 = { w*(x + 0.5f), h2, h*(z - 0.5f) };
+            Vector3 v5 = { w*(x + 0.5f), 0, h*(z - 0.5f) };
+            Vector3 v6 = { w*(x - 0.5f), 0, h*(z - 0.5f) };
+            Vector3 v7 = { w*(x - 0.5f), 0, h*(z + 0.5f) };
+            Vector3 v8 = { w*(x + 0.5f), 0, h*(z + 0.5f) };
+
+            // We check pixel color to be WHITE, we will full cubes
+            if ((cubicmapPixels[z*cubicmap.width + x].r == 255) &&
+                (cubicmapPixels[z*cubicmap.width + x].g == 255) &&
+                (cubicmapPixels[z*cubicmap.width + x].b == 255))
+            {
+                // Define triangles (Checking Collateral Cubes!)
+                //----------------------------------------------
+
+                // Define top triangles (2 tris, 6 vertex --> v1-v2-v3, v1-v3-v4)
+                mapVertices[vCounter] = v1;
+                mapVertices[vCounter + 1] = v2;
+                mapVertices[vCounter + 2] = v3;
+                mapVertices[vCounter + 3] = v1;
+                mapVertices[vCounter + 4] = v3;
+                mapVertices[vCounter + 5] = v4;
+                vCounter += 6;
+
+                mapNormals[nCounter] = n3;
+                mapNormals[nCounter + 1] = n3;
+                mapNormals[nCounter + 2] = n3;
+                mapNormals[nCounter + 3] = n3;
+                mapNormals[nCounter + 4] = n3;
+                mapNormals[nCounter + 5] = n3;
+                nCounter += 6;
+
+                mapTexcoords[tcCounter] = (Vector2){ topTexUV.x, topTexUV.y };
+                mapTexcoords[tcCounter + 1] = (Vector2){ topTexUV.x, topTexUV.y + topTexUV.height };
+                mapTexcoords[tcCounter + 2] = (Vector2){ topTexUV.x + topTexUV.width, topTexUV.y + topTexUV.height };
+                mapTexcoords[tcCounter + 3] = (Vector2){ topTexUV.x, topTexUV.y };
+                mapTexcoords[tcCounter + 4] = (Vector2){ topTexUV.x + topTexUV.width, topTexUV.y + topTexUV.height };
+                mapTexcoords[tcCounter + 5] = (Vector2){ topTexUV.x + topTexUV.width, topTexUV.y };
+                tcCounter += 6;
+
+                // Define bottom triangles (2 tris, 6 vertex --> v6-v8-v7, v6-v5-v8)
+                mapVertices[vCounter] = v6;
+                mapVertices[vCounter + 1] = v8;
+                mapVertices[vCounter + 2] = v7;
+                mapVertices[vCounter + 3] = v6;
+                mapVertices[vCounter + 4] = v5;
+                mapVertices[vCounter + 5] = v8;
+                vCounter += 6;
+
+                mapNormals[nCounter] = n4;
+                mapNormals[nCounter + 1] = n4;
+                mapNormals[nCounter + 2] = n4;
+                mapNormals[nCounter + 3] = n4;
+                mapNormals[nCounter + 4] = n4;
+                mapNormals[nCounter + 5] = n4;
+                nCounter += 6;
+
+                mapTexcoords[tcCounter] = (Vector2){ bottomTexUV.x + bottomTexUV.width, bottomTexUV.y };
+                mapTexcoords[tcCounter + 1] = (Vector2){ bottomTexUV.x, bottomTexUV.y + bottomTexUV.height };
+                mapTexcoords[tcCounter + 2] = (Vector2){ bottomTexUV.x + bottomTexUV.width, bottomTexUV.y + bottomTexUV.height };
+                mapTexcoords[tcCounter + 3] = (Vector2){ bottomTexUV.x + bottomTexUV.width, bottomTexUV.y };
+                mapTexcoords[tcCounter + 4] = (Vector2){ bottomTexUV.x, bottomTexUV.y };
+                mapTexcoords[tcCounter + 5] = (Vector2){ bottomTexUV.x, bottomTexUV.y + bottomTexUV.height };
+                tcCounter += 6;
+
+                if (((z < cubicmap.height - 1) &&
+                (cubicmapPixels[(z + 1)*cubicmap.width + x].r == 0) &&
+                (cubicmapPixels[(z + 1)*cubicmap.width + x].g == 0) &&
+                (cubicmapPixels[(z + 1)*cubicmap.width + x].b == 0)) || (z == cubicmap.height - 1))
+                {
+                    // Define front triangles (2 tris, 6 vertex) --> v2 v7 v3, v3 v7 v8
+                    // NOTE: Collateral occluded faces are not generated
+                    mapVertices[vCounter] = v2;
+                    mapVertices[vCounter + 1] = v7;
+                    mapVertices[vCounter + 2] = v3;
+                    mapVertices[vCounter + 3] = v3;
+                    mapVertices[vCounter + 4] = v7;
+                    mapVertices[vCounter + 5] = v8;
+                    vCounter += 6;
+
+                    mapNormals[nCounter] = n6;
+                    mapNormals[nCounter + 1] = n6;
+                    mapNormals[nCounter + 2] = n6;
+                    mapNormals[nCounter + 3] = n6;
+                    mapNormals[nCounter + 4] = n6;
+                    mapNormals[nCounter + 5] = n6;
+                    nCounter += 6;
+
+                    mapTexcoords[tcCounter] = (Vector2){ frontTexUV.x, frontTexUV.y };
+                    mapTexcoords[tcCounter + 1] = (Vector2){ frontTexUV.x, frontTexUV.y + frontTexUV.height };
+                    mapTexcoords[tcCounter + 2] = (Vector2){ frontTexUV.x + frontTexUV.width, frontTexUV.y };
+                    mapTexcoords[tcCounter + 3] = (Vector2){ frontTexUV.x + frontTexUV.width, frontTexUV.y };
+                    mapTexcoords[tcCounter + 4] = (Vector2){ frontTexUV.x, frontTexUV.y + frontTexUV.height };
+                    mapTexcoords[tcCounter + 5] = (Vector2){ frontTexUV.x + frontTexUV.width, frontTexUV.y + frontTexUV.height };
+                    tcCounter += 6;
+                }
+
+                if (((z > 0) &&
+                (cubicmapPixels[(z - 1)*cubicmap.width + x].r == 0) &&
+                (cubicmapPixels[(z - 1)*cubicmap.width + x].g == 0) &&
+                (cubicmapPixels[(z - 1)*cubicmap.width + x].b == 0)) || (z == 0))
+                {
+                    // Define back triangles (2 tris, 6 vertex) --> v1 v5 v6, v1 v4 v5
+                    // NOTE: Collateral occluded faces are not generated
+                    mapVertices[vCounter] = v1;
+                    mapVertices[vCounter + 1] = v5;
+                    mapVertices[vCounter + 2] = v6;
+                    mapVertices[vCounter + 3] = v1;
+                    mapVertices[vCounter + 4] = v4;
+                    mapVertices[vCounter + 5] = v5;
+                    vCounter += 6;
+
+                    mapNormals[nCounter] = n5;
+                    mapNormals[nCounter + 1] = n5;
+                    mapNormals[nCounter + 2] = n5;
+                    mapNormals[nCounter + 3] = n5;
+                    mapNormals[nCounter + 4] = n5;
+                    mapNormals[nCounter + 5] = n5;
+                    nCounter += 6;
+
+                    mapTexcoords[tcCounter] = (Vector2){ backTexUV.x + backTexUV.width, backTexUV.y };
+                    mapTexcoords[tcCounter + 1] = (Vector2){ backTexUV.x, backTexUV.y + backTexUV.height };
+                    mapTexcoords[tcCounter + 2] = (Vector2){ backTexUV.x + backTexUV.width, backTexUV.y + backTexUV.height };
+                    mapTexcoords[tcCounter + 3] = (Vector2){ backTexUV.x + backTexUV.width, backTexUV.y };
+                    mapTexcoords[tcCounter + 4] = (Vector2){ backTexUV.x, backTexUV.y };
+                    mapTexcoords[tcCounter + 5] = (Vector2){ backTexUV.x, backTexUV.y + backTexUV.height };
+                    tcCounter += 6;
+                }
+
+                if (((x < cubicmap.width - 1) &&
+                (cubicmapPixels[z*cubicmap.width + (x + 1)].r == 0) &&
+                (cubicmapPixels[z*cubicmap.width + (x + 1)].g == 0) &&
+                (cubicmapPixels[z*cubicmap.width + (x + 1)].b == 0)) || (x == cubicmap.width - 1))
+                {
+                    // Define right triangles (2 tris, 6 vertex) --> v3 v8 v4, v4 v8 v5
+                    // NOTE: Collateral occluded faces are not generated
+                    mapVertices[vCounter] = v3;
+                    mapVertices[vCounter + 1] = v8;
+                    mapVertices[vCounter + 2] = v4;
+                    mapVertices[vCounter + 3] = v4;
+                    mapVertices[vCounter + 4] = v8;
+                    mapVertices[vCounter + 5] = v5;
+                    vCounter += 6;
+
+                    mapNormals[nCounter] = n1;
+                    mapNormals[nCounter + 1] = n1;
+                    mapNormals[nCounter + 2] = n1;
+                    mapNormals[nCounter + 3] = n1;
+                    mapNormals[nCounter + 4] = n1;
+                    mapNormals[nCounter + 5] = n1;
+                    nCounter += 6;
+
+                    mapTexcoords[tcCounter] = (Vector2){ rightTexUV.x, rightTexUV.y };
+                    mapTexcoords[tcCounter + 1] = (Vector2){ rightTexUV.x, rightTexUV.y + rightTexUV.height };
+                    mapTexcoords[tcCounter + 2] = (Vector2){ rightTexUV.x + rightTexUV.width, rightTexUV.y };
+                    mapTexcoords[tcCounter + 3] = (Vector2){ rightTexUV.x + rightTexUV.width, rightTexUV.y };
+                    mapTexcoords[tcCounter + 4] = (Vector2){ rightTexUV.x, rightTexUV.y + rightTexUV.height };
+                    mapTexcoords[tcCounter + 5] = (Vector2){ rightTexUV.x + rightTexUV.width, rightTexUV.y + rightTexUV.height };
+                    tcCounter += 6;
+                }
+
+                if (((x > 0) &&
+                (cubicmapPixels[z*cubicmap.width + (x - 1)].r == 0) &&
+                (cubicmapPixels[z*cubicmap.width + (x - 1)].g == 0) &&
+                (cubicmapPixels[z*cubicmap.width + (x - 1)].b == 0)) || (x == 0))
+                {
+                    // Define left triangles (2 tris, 6 vertex) --> v1 v7 v2, v1 v6 v7
+                    // NOTE: Collateral occluded faces are not generated
+                    mapVertices[vCounter] = v1;
+                    mapVertices[vCounter + 1] = v7;
+                    mapVertices[vCounter + 2] = v2;
+                    mapVertices[vCounter + 3] = v1;
+                    mapVertices[vCounter + 4] = v6;
+                    mapVertices[vCounter + 5] = v7;
+                    vCounter += 6;
+
+                    mapNormals[nCounter] = n2;
+                    mapNormals[nCounter + 1] = n2;
+                    mapNormals[nCounter + 2] = n2;
+                    mapNormals[nCounter + 3] = n2;
+                    mapNormals[nCounter + 4] = n2;
+                    mapNormals[nCounter + 5] = n2;
+                    nCounter += 6;
+
+                    mapTexcoords[tcCounter] = (Vector2){ leftTexUV.x, leftTexUV.y };
+                    mapTexcoords[tcCounter + 1] = (Vector2){ leftTexUV.x + leftTexUV.width, leftTexUV.y + leftTexUV.height };
+                    mapTexcoords[tcCounter + 2] = (Vector2){ leftTexUV.x + leftTexUV.width, leftTexUV.y };
+                    mapTexcoords[tcCounter + 3] = (Vector2){ leftTexUV.x, leftTexUV.y };
+                    mapTexcoords[tcCounter + 4] = (Vector2){ leftTexUV.x, leftTexUV.y + leftTexUV.height };
+                    mapTexcoords[tcCounter + 5] = (Vector2){ leftTexUV.x + leftTexUV.width, leftTexUV.y + leftTexUV.height };
+                    tcCounter += 6;
+                }
+            }
+            // We check pixel color to be BLACK, we will only draw floor and roof
+            else if  ((cubicmapPixels[z*cubicmap.width + x].r == 0) &&
+                      (cubicmapPixels[z*cubicmap.width + x].g == 0) &&
+                      (cubicmapPixels[z*cubicmap.width + x].b == 0))
+            {
+                // Define top triangles (2 tris, 6 vertex --> v1-v2-v3, v1-v3-v4)
+                mapVertices[vCounter] = v1;
+                mapVertices[vCounter + 1] = v3;
+                mapVertices[vCounter + 2] = v2;
+                mapVertices[vCounter + 3] = v1;
+                mapVertices[vCounter + 4] = v4;
+                mapVertices[vCounter + 5] = v3;
+                vCounter += 6;
+
+                mapNormals[nCounter] = n4;
+                mapNormals[nCounter + 1] = n4;
+                mapNormals[nCounter + 2] = n4;
+                mapNormals[nCounter + 3] = n4;
+                mapNormals[nCounter + 4] = n4;
+                mapNormals[nCounter + 5] = n4;
+                nCounter += 6;
+
+                mapTexcoords[tcCounter] = (Vector2){ topTexUV.x, topTexUV.y };
+                mapTexcoords[tcCounter + 1] = (Vector2){ topTexUV.x + topTexUV.width, topTexUV.y + topTexUV.height };
+                mapTexcoords[tcCounter + 2] = (Vector2){ topTexUV.x, topTexUV.y + topTexUV.height };
+                mapTexcoords[tcCounter + 3] = (Vector2){ topTexUV.x, topTexUV.y };
+                mapTexcoords[tcCounter + 4] = (Vector2){ topTexUV.x + topTexUV.width, topTexUV.y };
+                mapTexcoords[tcCounter + 5] = (Vector2){ topTexUV.x + topTexUV.width, topTexUV.y + topTexUV.height };
+                tcCounter += 6;
+
+                // Define bottom triangles (2 tris, 6 vertex --> v6-v8-v7, v6-v5-v8)
+                mapVertices[vCounter] = v6;
+                mapVertices[vCounter + 1] = v7;
+                mapVertices[vCounter + 2] = v8;
+                mapVertices[vCounter + 3] = v6;
+                mapVertices[vCounter + 4] = v8;
+                mapVertices[vCounter + 5] = v5;
+                vCounter += 6;
+
+                mapNormals[nCounter] = n3;
+                mapNormals[nCounter + 1] = n3;
+                mapNormals[nCounter + 2] = n3;
+                mapNormals[nCounter + 3] = n3;
+                mapNormals[nCounter + 4] = n3;
+                mapNormals[nCounter + 5] = n3;
+                nCounter += 6;
+
+                mapTexcoords[tcCounter] = (Vector2){ bottomTexUV.x + bottomTexUV.width, bottomTexUV.y };
+                mapTexcoords[tcCounter + 1] = (Vector2){ bottomTexUV.x + bottomTexUV.width, bottomTexUV.y + bottomTexUV.height };
+                mapTexcoords[tcCounter + 2] = (Vector2){ bottomTexUV.x, bottomTexUV.y + bottomTexUV.height };
+                mapTexcoords[tcCounter + 3] = (Vector2){ bottomTexUV.x + bottomTexUV.width, bottomTexUV.y };
+                mapTexcoords[tcCounter + 4] = (Vector2){ bottomTexUV.x, bottomTexUV.y + bottomTexUV.height };
+                mapTexcoords[tcCounter + 5] = (Vector2){ bottomTexUV.x, bottomTexUV.y };
+                tcCounter += 6;
+            }
+        }
+    }
+
+    // Move data from mapVertices temp arays to vertices float array
+    mesh.vertexCount = vCounter;
+
+    mesh.vertices = (float *)malloc(mesh.vertexCount*3*sizeof(float));
+    mesh.normals = (float *)malloc(mesh.vertexCount*3*sizeof(float));
+    mesh.texcoords = (float *)malloc(mesh.vertexCount*2*sizeof(float));
+
+    int fCounter = 0;
+
+    // Move vertices data
+    for (int i = 0; i < vCounter; i++)
+    {
+        mesh.vertices[fCounter] = mapVertices[i].x;
+        mesh.vertices[fCounter + 1] = mapVertices[i].y;
+        mesh.vertices[fCounter + 2] = mapVertices[i].z;
+        fCounter += 3;
+    }
+
+    fCounter = 0;
+
+    // Move normals data
+    for (int i = 0; i < nCounter; i++)
+    {
+        mesh.normals[fCounter] = mapNormals[i].x;
+        mesh.normals[fCounter + 1] = mapNormals[i].y;
+        mesh.normals[fCounter + 2] = mapNormals[i].z;
+        fCounter += 3;
+    }
+
+    fCounter = 0;
+
+    // Move texcoords data
+    for (int i = 0; i < tcCounter; i++)
+    {
+        mesh.texcoords[fCounter] = mapTexcoords[i].x;
+        mesh.texcoords[fCounter + 1] = mapTexcoords[i].y;
+        fCounter += 2;
+    }
+
+    free(mapVertices);
+    free(mapNormals);
+    free(mapTexcoords);
+
+    free(cubicmapPixels);   // Free image pixel data
+    
+    TraceLog(LOG_INFO, "Mesh generated successfully (vertexCount: %i)", mesh.vertexCount);
+
+    return mesh;
+}
+
 // LESSON 05: Camera system management (1st person)
 //----------------------------------------------------------------------------------
 static void UpdateCamera(Camera *camera)
@@ -767,7 +1134,6 @@ static void UpdateCamera(Camera *camera)
     static int cameraPanControlKey = 2;                   // raylib: MOUSE_MIDDLE_BUTTON
     static int cameraAltControlKey = 342;                 // raylib: KEY_LEFT_ALT
     static int cameraSmoothZoomControlKey = 341;          // raylib: KEY_LEFT_CONTROL
-
 
     static int swingCounter = 0;    // Used for 1st person swinging movement
     static Vector2 previousMousePosition = { 0.0f, 0.0f };
@@ -843,7 +1209,7 @@ static Vector3 ResolveCollisionCubicmap(Image cubicmap, Vector3 mapPosition, Vec
 {
     #define CUBIC_MAP_HALF_BLOCK_SIZE   0.5
 
-    Color *cubicmapPixels; // = GetImageData(cubicmap);     // TODO
+    Color *cubicmapPixels = GetImageData(cubicmap);
 
     // Detect the cell where the player is located
     Vector3 impactDirection = { 0.0f, 0.0f, 0.0f };
@@ -1088,29 +1454,7 @@ static Vector3 ResolveCollisionCubicmap(Image cubicmap, Vector3 mapPosition, Vec
 
 // LESSON 07: Models loading and drawing
 //----------------------------------------------------------------------------------
-
-// Load static model data (RAM and VRAM)
-// NOTE: Loads Mesh data and setups default Material with default Shader
-static Model LoadModel(const char *fileName)
-{
-    Model model = { 0 };
-    const char *fileExt;
-    
-    if ((fileExt = strrchr(fileName, '.')) != NULL)
-    {
-        // Check if file extension is supported
-        if (strcmp(fileExt, ".obj") == 0) model.mesh = LoadOBJ(fileName);
-    }
-    
-    //model.material.shader = shdrDefault;
-    //model.material.map[MAP_DIFFUSE].texture = 
-    
-    model.transform = MatrixIdentity();
-
-    return model;
-}
-
-// Load static mesh from OBJ file (RAM and VRAM)
+// Load static mesh from OBJ file (RAM)
 static Mesh LoadOBJ(const char *fileName)
 {
     Mesh mesh = { 0 };
@@ -1540,4 +1884,118 @@ void TraceLog(int msgType, const char *text, ...)
     va_end(args);
 
     if (msgType == LOG_ERROR) exit(1);
+}
+
+// Get pixel data from image as Color array
+static Color *GetImageData(Image image)
+{
+    Color *pixels = (Color *)malloc(image.width*image.height*sizeof(Color));
+
+    int k = 0;
+
+    for (int i = 0; i < image.width*image.height; i++)
+    {
+        switch (image.format)
+        {
+            case UNCOMPRESSED_GRAYSCALE:
+            {
+                pixels[i].r = ((unsigned char *)image.data)[k];
+                pixels[i].g = ((unsigned char *)image.data)[k];
+                pixels[i].b = ((unsigned char *)image.data)[k];
+                pixels[i].a = 255;
+
+                k++;
+            } break;
+            case UNCOMPRESSED_GRAY_ALPHA:
+            {
+                pixels[i].r = ((unsigned char *)image.data)[k];
+                pixels[i].g = ((unsigned char *)image.data)[k];
+                pixels[i].b = ((unsigned char *)image.data)[k];
+                pixels[i].a = ((unsigned char *)image.data)[k + 1];
+
+                k += 2;
+            } break;
+            case UNCOMPRESSED_R5G5B5A1:
+            {
+                unsigned short pixel = ((unsigned short *)image.data)[k];
+
+                pixels[i].r = (unsigned char)((float)((pixel & 0b1111100000000000) >> 11)*(255/31));
+                pixels[i].g = (unsigned char)((float)((pixel & 0b0000011111000000) >> 6)*(255/31));
+                pixels[i].b = (unsigned char)((float)((pixel & 0b0000000000111110) >> 1)*(255/31));
+                pixels[i].a = (unsigned char)((pixel & 0b0000000000000001)*255);
+
+                k++;
+            } break;
+            case UNCOMPRESSED_R5G6B5:
+            {
+                unsigned short pixel = ((unsigned short *)image.data)[k];
+
+                pixels[i].r = (unsigned char)((float)((pixel & 0b1111100000000000) >> 11)*(255/31));
+                pixels[i].g = (unsigned char)((float)((pixel & 0b0000011111100000) >> 5)*(255/63));
+                pixels[i].b = (unsigned char)((float)(pixel & 0b0000000000011111)*(255/31));
+                pixels[i].a = 255;
+
+                k++;
+            } break;
+            case UNCOMPRESSED_R4G4B4A4:
+            {
+                unsigned short pixel = ((unsigned short *)image.data)[k];
+
+                pixels[i].r = (unsigned char)((float)((pixel & 0b1111000000000000) >> 12)*(255/15));
+                pixels[i].g = (unsigned char)((float)((pixel & 0b0000111100000000) >> 8)*(255/15));
+                pixels[i].b = (unsigned char)((float)((pixel & 0b0000000011110000) >> 4)*(255/15));
+                pixels[i].a = (unsigned char)((float)(pixel & 0b0000000000001111)*(255/15));
+
+                k++;
+            } break;
+            case UNCOMPRESSED_R8G8B8A8:
+            {
+                pixels[i].r = ((unsigned char *)image.data)[k];
+                pixels[i].g = ((unsigned char *)image.data)[k + 1];
+                pixels[i].b = ((unsigned char *)image.data)[k + 2];
+                pixels[i].a = ((unsigned char *)image.data)[k + 3];
+
+                k += 4;
+            } break;
+            case UNCOMPRESSED_R8G8B8:
+            {
+                pixels[i].r = (unsigned char)((unsigned char *)image.data)[k];
+                pixels[i].g = (unsigned char)((unsigned char *)image.data)[k + 1];
+                pixels[i].b = (unsigned char)((unsigned char *)image.data)[k + 2];
+                pixels[i].a = 255;
+
+                k += 3;
+            } break;
+            default: TraceLog(LOG_WARNING, "Format not supported for pixel data retrieval"); break;
+        }
+    }
+
+    return pixels;
+}
+
+// NOTE: Returned vector is a transposed version of the Matrix struct,
+// it should be this way because, despite raymath use OpenGL column-major convention,
+// Matrix struct memory alignment and variables naming are not coherent
+static float *MatrixToFloat(Matrix mat)
+{
+    static float buffer[16];
+
+    buffer[0] = mat.m0;
+    buffer[1] = mat.m4;
+    buffer[2] = mat.m8;
+    buffer[3] = mat.m12;
+    buffer[4] = mat.m1;
+    buffer[5] = mat.m5;
+    buffer[6] = mat.m9;
+    buffer[7] = mat.m13;
+    buffer[8] = mat.m2;
+    buffer[9] = mat.m6;
+    buffer[10] = mat.m10;
+    buffer[11] = mat.m14;
+    buffer[12] = mat.m3;
+    buffer[13] = mat.m7;
+    buffer[14] = mat.m11;
+    buffer[15] = mat.m15;
+
+    return buffer;
 }

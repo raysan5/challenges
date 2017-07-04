@@ -27,10 +27,10 @@
 
 #define RAYMATH_STANDALONE
 #define RAYMATH_IMPLEMENTATION
-#include "raymath.h"            // Required for: Vector3 and Matrix functions
+#include "raymath.h"            // Vector3 and Matrix math functions
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"          // Support multiple image fileformats loading
+#include "stb_image.h"          // Multiple image fileformats loading functions
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -49,6 +49,8 @@ typedef struct Color {
     unsigned char b;
     unsigned char a;
 } Color;
+
+typedef enum { LOG_INFO = 0, LOG_ERROR, LOG_WARNING, LOG_DEBUG, LOG_OTHER } TraceLogType;
     
 // LESSON 03: Texture formats enum
 typedef enum {
@@ -89,7 +91,7 @@ typedef struct Camera {
     float fovy;             // Camera field-of-view apperture in Y (degrees)
 } Camera;
 
-// Camera move modes (first person and third person cameras)
+// LESSON 05: Camera move modes (first person)
 typedef enum { 
     MOVE_FRONT = 0, 
     MOVE_BACK, 
@@ -151,17 +153,15 @@ typedef struct Model {
     Material material;      // Shader and textures data
 } Model;
 
-typedef enum { LOG_INFO = 0, LOG_ERROR, LOG_WARNING, LOG_DEBUG, LOG_OTHER } TraceLogType;
-
 //----------------------------------------------------------------------------------
 // Global Variables Declaration
 //----------------------------------------------------------------------------------
 GLFWwindow *window;
 
-static unsigned int whiteTexture;
-static Shader defaultShader;
-static Matrix projection;
-static Matrix modelview;
+static Texture2D texDefault;
+static Shader shdrDefault;
+static Matrix matProjection;
+static Matrix matModelview;
 
 static double currentTime, previousTime;    // Used to track timmings
 static double frameTime = 0.0;              // Time measure for one frame
@@ -187,7 +187,8 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
 static void MouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
 static void MouseCursorPosCallback(GLFWwindow *window, double x, double y);
 
-void TraceLog(int msgType, const char *text, ...);              // Show trace log messages (LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DEBUG)
+void TraceLog(int msgType, const char *text, ...);      // Show trace log messages (LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DEBUG)
+static Shader LoadShaderDefault(void);                  // Load default shader (basic shader)
 
 // LESSON 01: Window and context creation, extensions loading
 //----------------------------------------------------------------------------------
@@ -210,7 +211,7 @@ static void PollInputEvents(void);                  // Poll (store) all input ev
 //----------------------------------------------------------------------------------
 static Image LoadImage(const char *fileName);       // Load image data to CPU memory (RAM)
 static void UnloadImage(Image image);               // Unload image data from CPU memory (RAM)
-static Texture2D LoadTextureFromImage(Image image); // Load texture from image data into GPU memory (VRAM)
+static Texture2D LoadTexture(unsigned char *data, int width, int height, int format);  // Load texture data in GPU memory (VRAM)
 static void UnloadTexture(Texture2D texture);       // Unload texture data from GPU memory (VRAM)
 
 static void DrawTexture(Texture2D texture, Vector2 position, Color tint);   // Draw texture in screen position coordinates
@@ -219,6 +220,7 @@ static void DrawTexture(Texture2D texture, Vector2 position, Color tint);   // D
 //----------------------------------------------------------------------------------
 static Model LoadCubicmap(Image cubicmap, float cubeSize);  // Load cubicmap (pixels image) into a 3d model
 static void UnloadModel(Model model);                       // Unload model data from memory (RAM and VRAM)
+static void UploadMeshData(Mesh *mesh);                     // Upload mesh data into VRAM
 
 static void DrawModel(Model model, Vector3 position, float scale, Color tint);
 
@@ -361,14 +363,14 @@ static void InitGraphicsDevice(int width, int height)
     // Init default white texture
     unsigned char pixels[4] = { 255, 255, 255, 255 };   // 1 pixel RGBA (4 bytes)
 
-    // TODO: whiteTexture = rlglLoadTexture(pixels, 1, 1, UNCOMPRESSED_R8G8B8A8, 1);
+    // TODO: texDefault = rlglLoadTexture(pixels, 1, 1, UNCOMPRESSED_R8G8B8A8, 1);
 
     // Init default Shader (customized for GL 3.3 and ES2)
-    // TODO: defaultShader = LoadDefaultShader();
+    // TODO: shdrDefault = LoadDefaultShader();
 
-    // Init internal projection and modelview matrices
-    projection = MatrixIdentity();
-    modelview = MatrixIdentity();
+    // Init internal matProjection and matModelview matrices
+    matProjection = MatrixIdentity();
+    matModelview = MatrixIdentity();
 
     // Init state: Depth test
     glDepthFunc(GL_LEQUAL);                                 // Type of depth testing to apply
@@ -397,13 +399,13 @@ static void InitGraphicsDevice(int width, int height)
 
     TraceLog(LOG_INFO, "OpenGL default states initialized successfully");
 
-    // Initialize viewport and projection/modelview matrices
+    // Initialize viewport and matProjection/matModelview matrices
     glViewport(0, 0, width, height);
     
     /*
     glMatrixMode(RL_PROJECTION);                        // Switch to PROJECTION matrix
     glLoadIdentity();                                   // Reset current matrix (PROJECTION)
-    glOrtho(0, screenWidth, screenHeight, 0, 0.0f, 1.0f); // Orthographic projection with top-left corner at (0,0)
+    glOrtho(0, screenWidth, screenHeight, 0, 0.0f, 1.0f); // Orthographic matProjection with top-left corner at (0,0)
     glMatrixMode(RL_MODELVIEW);                         // Switch back to MODELVIEW matrix
     glLoadIdentity();                                   // Reset current matrix (MODELVIEW)
 
@@ -415,8 +417,8 @@ static void InitGraphicsDevice(int width, int height)
 // Close window and free resources
 static void CloseWindow(void)
 {
-    // TODO: UnloadShader(defaultShader);
-    glDeleteTextures(1, &whiteTexture);
+    // TODO: Unload default shader
+    glDeleteTextures(1, &texDefault);
 
     glfwDestroyWindow(window);      // Close window
     glfwTerminate();                // Free GLFW3 resources
@@ -520,12 +522,12 @@ static Image LoadImage(const char *fileName)
     if ((fileExt = strrchr(fileName, '.')) != NULL)
     {
         // Check if file extension is supported
-        if ((strcmp(fileExt, "bmp") == 0) ||
-            (strcmp(fileExt, "png") == 0) ||
-            (strcmp(fileExt, "tga") == 0) ||
-            (strcmp(fileExt, "jpg") == 0) ||
-            (strcmp(fileExt, "gif") == 0) ||
-            (strcmp(fileExt, "psd") == 0))
+        if ((strcmp(fileExt, ".bmp") == 0) ||
+            (strcmp(fileExt, ".png") == 0) ||
+            (strcmp(fileExt, ".tga") == 0) ||
+            (strcmp(fileExt, ".jpg") == 0) ||
+            (strcmp(fileExt, ".gif") == 0) ||
+            (strcmp(fileExt, ".psd") == 0))
         {
             int imgWidth = 0;
             int imgHeight = 0;
@@ -605,8 +607,8 @@ static Model LoadCubicmap(Image cubicmap, float cubeSize)
 // NOTE: Unloads Mesh data and Material shader
 static void UnloadModel(Model model)
 {
-    // TODO: UnloadMesh(model.mesh);
-    // TODO: UnloadMaterial(model.material);
+    // TODO: Unload mesh data
+    // TODO: Unload material
 }
 
 static void DrawModel(Model model, Vector3 position, float scale, Color tint)
@@ -622,7 +624,76 @@ static void DrawModel(Model model, Vector3 position, float scale, Color tint)
     model.transform = MatrixMultiply(model.transform, matTransform);
     model.material.colDiffuse = tint;       // Assign tint as diffuse color
 
-    //TODO: rlglDrawMesh(model.mesh, model.material, model.transform);
+    // TODO: Draw model
+    glUseProgram(material.shader.id);       // Bind material shader
+
+    // Upload to shader material.colDiffuse
+    glUniform4f(material.shader.colDiffuseLoc, (float)material.colDiffuse.r/255, (float)material.colDiffuse.g/255, (float)material.colDiffuse.b/255, (float)material.colDiffuse.a/255);
+
+    // Upload to shader material.colSpecular (if available)
+    if (material.shader.colSpecularLoc != -1) glUniform4f(material.shader.colSpecularLoc, (float)material.colSpecular.r/255, (float)material.colSpecular.g/255, (float)material.colSpecular.b/255, (float)material.colSpecular.a/255);
+
+    // At this point the matModelview matrix just contains the view matrix (camera)
+    // That's because Begin3dMode() sets it an no model-drawing function modifies it, all use rlPushMatrix() and rlPopMatrix()
+    Matrix matView = matModelview;         // View matrix (camera)
+    Matrix matProjection = matProjection;  // Projection matrix (perspective)
+
+    // Calculate model-view matrix combining matModel and matView
+    Matrix matModelView = MatrixMultiply(transform, matView);           // Transform to camera-space coordinates
+    
+    // Set shader textures (diffuse, normal, specular)
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, material.texDiffuse.id);
+    glUniform1i(material.shader.mapTexture0Loc, 0);         // Diffuse texture fits in active texture unit 0
+
+    if ((material.texNormal.id != 0) && (material.shader.mapTexture1Loc != -1))
+    {
+        // Upload to shader specular map flag
+        glUniform1i(glGetUniformLocation(material.shader.id, "useNormal"), 1);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, material.texNormal.id);
+        glUniform1i(material.shader.mapTexture1Loc, 1);     // Normal texture fits in active texture unit 1
+    }
+
+    if ((material.texSpecular.id != 0) && (material.shader.mapTexture2Loc != -1))
+    {
+        // Upload to shader specular map flag
+        glUniform1i(glGetUniformLocation(material.shader.id, "useSpecular"), 1);
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, material.texSpecular.id);
+        glUniform1i(material.shader.mapTexture2Loc, 2);    // Specular texture fits in active texture unit 2
+    }
+
+    // Bind mesh VAO (vertex array objects)
+    glBindVertexArray(mesh.vaoId);
+    
+    // Calculate model-view-matProjection matrix (MVP)
+    Matrix matMVP = MatrixMultiply(matModelview, matProjection);        // Transform to screen-space coordinates
+
+    // Send combined model-view-matProjection matrix to shader
+    glUniformMatrix4fv(material.shader.mvpLoc, 1, false, MatrixToFloat(matMVP));
+
+    // Draw call!
+    glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount);
+    
+    if (material.texNormal.id != 0)
+    {
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    if (material.texSpecular.id != 0)
+    {
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    glActiveTexture(GL_TEXTURE0);       // Set shader active texture to default 0
+    glBindTexture(GL_TEXTURE_2D, 0);    // Unbind textures
+    glBindVertexArray(0);               // Unbind VAO
+    glUseProgram(0);                    // Unbind shader program
 }
 
 // LESSON 05: Camera system management (1st person)
@@ -642,7 +713,6 @@ static void UpdateCamera(Camera *camera)
     #define CAMERA_FIRST_PERSON_STEP_DIVIDER                30.0f
     #define CAMERA_FIRST_PERSON_WAVING_DIVIDER              200.0f
     
-    //static Vector2 cameraAngle = { 0.0f, 0.0f };          // TODO: Remove! Compute it in UpdateCamera()
     static float playerEyesPosition = 1.85f;              // Default player eyes position from ground (in meters) 
 
     static int cameraMoveControl[6]  = { 'W', 'S', 'D', 'A', 'E', 'Q' };
@@ -981,15 +1051,18 @@ static Model LoadModel(const char *fileName)
     if ((fileExt = strrchr(fileName, '.')) != NULL)
     {
         // Check if file extension is supported
-        if (strcmp(fileExt, "obj") == 0) model.mesh = LoadOBJ(fileName);
+        if (strcmp(fileExt, ".obj") == 0) model.mesh = LoadOBJ(fileName);
     }
     
-    // TODO: model.material = LoadMaterialDefault();
+    //model.material.shader = shdrDefault;
+    //model.material.map[MAP_DIFFUSE].texture = 
+    
     model.transform = MatrixIdentity();
 
     return model;
 }
 
+// Load static mesh from OBJ file (RAM and VRAM)
 static Mesh LoadOBJ(const char *fileName)
 {
     Mesh mesh = { 0 };
@@ -1058,10 +1131,10 @@ static Mesh LoadOBJ(const char *fileName)
         }
     }
 
-    TraceLog(LOG_DEBUG, "[%s] Model vertices: %i", fileName, vertexCount);
-    TraceLog(LOG_DEBUG, "[%s] Model texcoords: %i", fileName, texcoordCount);
-    TraceLog(LOG_DEBUG, "[%s] Model normals: %i", fileName, normalCount);
-    TraceLog(LOG_DEBUG, "[%s] Model triangles: %i", fileName, triangleCount);
+    TraceLog(LOG_DEBUG, "[%s] Mesh vertices: %i", fileName, vertexCount);
+    TraceLog(LOG_DEBUG, "[%s] Mesh texcoords: %i", fileName, texcoordCount);
+    TraceLog(LOG_DEBUG, "[%s] Mesh normals: %i", fileName, normalCount);
+    TraceLog(LOG_DEBUG, "[%s] Mesh triangles: %i", fileName, triangleCount);
 
     // Once we know the number of vertices to store, we create required arrays
     Vector3 *midVertices = (Vector3 *)malloc(vertexCount*sizeof(Vector3));
@@ -1230,9 +1303,172 @@ static Mesh LoadOBJ(const char *fileName)
     free(midTexCoords);
 
     // NOTE: At this point we have all vertex, texcoord, normal data for the model in mesh struct
-    TraceLog(LOG_INFO, "[%s] Model loaded successfully in RAM (CPU)", fileName);
+    TraceLog(LOG_INFO, "[%s] Mesh loaded successfully in RAM (CPU)", fileName);
+    
+    // Upload mesh data into VRAM
+    UploadMeshData(&mesh);
 
     return mesh;
+}
+
+// Upload mesh data into VRAM
+static void UploadMeshData(Mesh *mesh)
+{
+    GLuint vaoId = 0;           // Vertex Array Objects (VAO)
+    GLuint vboId[3] = { 0 };    // Vertex Buffer Objects (VBOs)
+
+    // Initialize Quads VAO (Buffer A)
+    glGenVertexArrays(1, &vaoId);
+    glBindVertexArray(vaoId);
+
+    // NOTE: Attributes must be uploaded considering default locations points
+
+    // Enable vertex attributes: position (shader-location = 0)
+    glGenBuffers(1, &vboId[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, vboId[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*3*mesh->vertexCount, mesh->vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, 0, 0, 0);
+    glEnableVertexAttribArray(0);
+
+    // Enable vertex attributes: texcoords (shader-location = 1)
+    glGenBuffers(1, &vboId[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, vboId[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*2*mesh->vertexCount, mesh->texcoords, GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 2, GL_FLOAT, 0, 0, 0);
+    glEnableVertexAttribArray(1);
+
+    // Enable vertex attributes: normals (shader-location = 2)
+    if (mesh->normals != NULL)
+    {
+        glGenBuffers(1, &vboId[2]);
+        glBindBuffer(GL_ARRAY_BUFFER, vboId[2]);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float)*3*mesh->vertexCount, mesh->normals, GL_STATIC_DRAW);
+        glVertexAttribPointer(2, 3, GL_FLOAT, 0, 0, 0);
+        glEnableVertexAttribArray(2);
+    }
+    else
+    {
+        // Default normal vertex attribute set 1.0f
+        glVertexAttrib3f(2, 1.0f, 1.0f, 1.0f);
+        glDisableVertexAttribArray(2);
+    }
+
+    mesh->vboId[0] = vboId[0];     // Vertex position VBO
+    mesh->vboId[1] = vboId[1];     // Texcoords VBO
+    mesh->vboId[2] = vboId[2];     // Normals VBO
+
+    mesh->vaoId = vaoId;
+    
+    TraceLog(LOG_INFO, "[VAO ID %i] Mesh uploaded successfully to VRAM (GPU)", mesh->vaoId);
+}
+
+// Load default shader
+static Shader LoadShaderDefault(void)
+{
+    Shader shader = { 0 };
+    
+    // STEP 01: Define shader code
+    // NOTE: It can be defined in external text file and just loaded
+    //-------------------------------------------------------------------------------
+
+    // Vertex shader directly defined, no external file required
+    char vDefaultShaderStr[] =
+        "#version 330                       \n"
+        "in vec3 vertexPosition;            \n"
+        "in vec2 vertexTexCoord;            \n"
+        "in vec3 vertexNormal;              \n"
+        "out vec2 fragTexCoord;             \n"
+        "out vec4 fragNormal;               \n"
+        "uniform mat4 mvpMatrix;            \n"
+        "void main()                        \n"
+        "{                                  \n"
+        "    fragTexCoord = vertexTexCoord; \n"
+        "    fragNormal = vertexNormal;     \n"
+        "    gl_Position = mvpMatrix*vec4(vertexPosition, 1.0); \n"
+        "}                                  \n";
+
+    // Fragment shader directly defined, no external file required
+    char fDefaultShaderStr[] =
+        "#version 330       \n"
+        "in vec2 fragTexCoord;              \n"
+        "in vec4 fragNormal;                \n"
+        "out vec4 finalColor;               \n"
+        "uniform sampler2D texture0;        \n"
+        "uniform vec4 colDiffuse;           \n"
+        "void main()                        \n"
+        "{                                  \n"
+        "    vec4 texelColor = texture(texture0, fragTexCoord);   \n"
+        "    finalColor = texelColor*colDiffuse;        \n"
+        "}                                  \n";
+
+    // STEP 02: Load shader program 
+    // NOTE: Vertex shader and fragment shader are compiled at runtime
+    //-------------------------------------------------------------------------------
+    GLuint vertexShader;
+    GLuint fragmentShader;
+
+    vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+    const char *pvs = vDefaultShaderStr;
+    const char *pfs = fDefaultShaderStr;
+
+    glShaderSource(vertexShader, 1, &pvs, NULL);
+    glShaderSource(fragmentShader, 1, &pfs, NULL);
+
+    glCompileShader(vertexShader);
+    glCompileShader(fragmentShader);
+
+    shader.id = glCreateProgram();
+
+    glAttachShader(shader.id, vertexShader);
+    glAttachShader(shader.id, fragmentShader);
+
+    // Default attribute shader locations must be binded before linking
+    glBindAttribLocation(shader.id, 0, "vertexPosition");
+    glBindAttribLocation(shader.id, 1, "vertexTexCoord");
+    glBindAttribLocation(shader.id, 2, "vertexNormal");
+
+    // NOTE: If some attrib name is not found in the shader, it locations becomes -1
+
+    glLinkProgram(shader.id);
+
+    // NOTE: All uniform variables are intitialised to 0 when a program links
+
+    // Shaders already compiled into program, not required any more
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    if (shader.id != 0) TraceLog(LOG_INFO, "[SHDR ID %i] Default shader loaded successfully", shader.id);
+    else TraceLog(LOG_WARNING, "[SHDR ID %i] Default shader could not be loaded", shader.id);
+
+    // STEP 03: Load default shader locations
+    // NOTE: Connection points (locations) between shader and our code must be retrieved
+    //-----------------------------------------------------------------------------------
+    if (shader.id != 0) 
+    {
+        // NOTE: Default shader attrib locations have been fixed before linking:
+        //          vertex position location    = 0
+        //          vertex texcoord location    = 1
+        //          vertex normal location      = 2
+
+        // Get handles to GLSL input attibute locations
+        shader.vertexLoc = glGetAttribLocation(shader.id, "vertexPosition");
+        shader.texcoordLoc = glGetAttribLocation(shader.id, "vertexTexCoord");
+        shader.normalLoc = glGetAttribLocation(shader.id, "vertexNormal");
+
+        // Get handles to GLSL uniform locations (vertex shader)
+        shader.mvpLoc  = glGetUniformLocation(shader.id, "mvpMatrix");
+
+        // Get handles to GLSL uniform locations (fragment shader)
+        shader.colDiffuseLoc = glGetUniformLocation(shader.id, "colDiffuse");
+        shader.colSpecularLoc = glGetUniformLocation(shader.id, "colSpecular");
+        shader.mapTexture0Loc = glGetUniformLocation(shader.id, "texture0");
+        shader.mapTexture1Loc = glGetUniformLocation(shader.id, "texture1");
+        shader.mapTexture2Loc = glGetUniformLocation(shader.id, "texture2"); 
+    }
+
+    return shader;
 }
 
 // Show trace log messages (LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DEBUG)

@@ -69,6 +69,8 @@ typedef struct Tilemap {
     Vector2 position;           // Tilemap position in screen
 } Tilemap;
 
+#define WHITE   (Color){ 255, 255, 255, 255 }
+
 //----------------------------------------------------------------------------------
 // Global Variables Declaration
 //----------------------------------------------------------------------------------
@@ -268,12 +270,12 @@ int main(void)
         // Draw
         //----------------------------------------------------------------------------------
         rlClearScreenBuffers();             // Clear current framebuffer
-                  
+
         DrawTilemap(tilemap, texTileset);   // Draw tilemap using provide tileset
         
-        //DrawRectangleRec(player, (Color){ 255, 0, 0, 255 });
-        DrawTexture(texPlayer, player.x, player.y, (Color){ 255, 255, 255, 255 });
-        //DrawTexture(texTileset, 100, 100, (Color){ 255, 255, 255, 255 });
+        //DrawRectangleRec(player, WHITE);
+        DrawTexture(texPlayer, player.x, player.y, WHITE);
+        //DrawTexture(texTileset, 100, 100, WHITE);
         
         rlglDraw();                         // Internal buffers drawing (2D data)
 
@@ -799,7 +801,7 @@ static void DrawTilemap(Tilemap map, Texture2D tileset)
         {
             //DrawRectangle(map.position.x + x*map.tileSize, map.position.y + y*map.tileSize, map.tileSize, map.tileSize, (Color){ 255, 0, 0, 255 });
             DrawTextureRec(tileset, tilesetRecs[map.tiles[y*map.tileCountX + x].value - 1], 
-                          (Vector2){ map.position.x + x*map.tileSize, map.position.y + y*map.tileSize }, (Color){ 255, 255, 255, 255 });
+                          (Vector2){ map.position.x + x*map.tileSize, map.position.y + y*map.tileSize }, WHITE);
         }
     }
     

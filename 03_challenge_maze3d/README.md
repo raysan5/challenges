@@ -163,4 +163,5 @@ This lecture is licensed under a <a rel="license" href="http://creativecommons.o
 Challenge code is licensed under an unmodified zlib/libpng license.
 
 Check [LICENSE](../LICENSE) for further details.
+
 *Copyright (c) 2017 Ramon Santamaria ([@raysan5](https://twitter.com/raysan5))*

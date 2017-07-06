@@ -316,6 +316,7 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     {
         glfwSetWindowShouldClose(window, GL_TRUE);
     }
+    else currentKeyState[key] = action;
 }
 
 // LESSON 01: Window creation and management

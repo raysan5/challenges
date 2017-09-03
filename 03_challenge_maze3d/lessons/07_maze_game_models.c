@@ -10,7 +10,7 @@
 *       stb_image.h - Multiple formats image loading (BMP, PNG, TGA, JPG...)
 *
 *   Compile example using:
-*       gcc -o $(NAME_PART).exe $(FILE_NAME) -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
+*       gcc -o $(NAME_PART).exe $(FILE_NAME) -Iexternal -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
 *
 *   This example has been created using raylib 1.7 (www.raylib.com)
 *   raylib is licensed under an unmodified zlib/libpng license (View raylib.h for details)
@@ -199,7 +199,6 @@ static void MouseCursorPosCallback(GLFWwindow *window, double x, double y);
 
 void TraceLog(int msgType, const char *text, ...);      // Show trace log messages (LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DEBUG)
 static Shader LoadShaderDefault(void);                  // Load default shader (basic shader)
-static float *MatrixToFloat(Matrix mat);                // Get float values array from Matrix
 
 // LESSON 01: Window and context creation, extensions loading
 //----------------------------------------------------------------------------------
@@ -267,19 +266,17 @@ int main(void)
     
     // Define our camera
     Camera camera;
-    camera.position = VectorOne();
-    camera.target = VectorZero();
-    camera.up = (Vector3){ 0, 1, 0 };
+    camera.position = Vector3One();
+    camera.target = Vector3Zero();
+    camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
     camera.fovy = 60.0f;
     
     // Calculate projection matrix (from perspective) and view matrix from camera look at
-    matProjection = MatrixPerspective(camera.fovy, (double)screenWidth/(double)screenHeight, 0.01, 1000.0);
-    MatrixTranspose(&matProjection);
+    matProjection = MatrixPerspective(camera.fovy*DEG2RAD, (double)screenWidth/(double)screenHeight, 0.01, 1000.0);
     matModelview = MatrixLookAt(camera.position, camera.target, camera.up);
     
     // 2D projection
     // matProjection = MatrixOrtho(0.0, screenWidth, screenHeight, 0.0, 0.0, 1.0);
-    // MatrixTranspose(&matProjection);
     // matModelview = MatrixIdentity();
     
     // Load cubicmap mesh from image
@@ -296,7 +293,7 @@ int main(void)
     Model map = LoadModel(meshMap, texDiffuse);
     UnloadImage(imDiffuse);
     
-    Vector3 mapPosition = VectorZero();
+    Vector3 mapPosition = Vector3Zero();
     
     SetTargetFPS(60);
     //--------------------------------------------------------------------------------------    
@@ -1473,8 +1470,8 @@ static Mesh LoadOBJ(const char *fileName)
                 else
                 {
                     // If normals not defined, they are calculated from the 3 vertices [N = (V2 - V1) x (V3 - V1)]
-                    Vector3 norm = VectorCrossProduct(VectorSubtract(midVertices[vCount[1]-1], midVertices[vCount[0]-1]), VectorSubtract(midVertices[vCount[2]-1], midVertices[vCount[0]-1]));
-                    VectorNormalize(&norm);
+                    Vector3 norm = Vector3CrossProduct(Vector3Subtract(midVertices[vCount[1]-1], midVertices[vCount[0]-1]), Vector3Subtract(midVertices[vCount[2]-1], midVertices[vCount[0]-1]));
+                    Vector3Normalize(&norm);
 
                     mesh.normals[nCounter] = norm.x;
                     mesh.normals[nCounter + 1] = norm.y;
@@ -1596,12 +1593,12 @@ static Shader LoadShaderDefault(void)
         "in vec3 vertexNormal;              \n"
         "out vec2 fragTexCoord;             \n"
         "out vec3 fragNormal;               \n"
-        "uniform mat4 mvpMatrix;            \n"
+        "uniform mat4 mvp;                  \n"
         "void main()                        \n"
         "{                                  \n"
         "    fragTexCoord = vertexTexCoord; \n"
         "    fragNormal = vertexNormal;     \n"
-        "    gl_Position = mvpMatrix*vec4(vertexPosition, 1.0); \n"
+        "    gl_Position = mvp*vec4(vertexPosition, 1.0); \n"
         "}                                  \n";
 
     // Fragment shader directly defined, no external file required
@@ -1675,7 +1672,7 @@ static Shader LoadShaderDefault(void)
         shader.normalLoc = glGetAttribLocation(shader.id, "vertexNormal");
 
         // Get handles to GLSL uniform locations (vertex shader)
-        shader.mvpLoc  = glGetUniformLocation(shader.id, "mvpMatrix");
+        shader.mvpLoc  = glGetUniformLocation(shader.id, "mvp");
 
         // Get handles to GLSL uniform locations (fragment shader)
         shader.colDiffuseLoc = glGetUniformLocation(shader.id, "colDiffuse");
@@ -1796,31 +1793,4 @@ static Color *GetImageData(Image image)
     }
 
     return pixels;
-}
-
-// NOTE: Returned vector is a transposed version of the Matrix struct,
-// it should be this way because, despite raymath use OpenGL column-major convention,
-// Matrix struct memory alignment and variables naming are not coherent
-static float *MatrixToFloat(Matrix mat)
-{
-    static float buffer[16];
-
-    buffer[0] = mat.m0;
-    buffer[1] = mat.m4;
-    buffer[2] = mat.m8;
-    buffer[3] = mat.m12;
-    buffer[4] = mat.m1;
-    buffer[5] = mat.m5;
-    buffer[6] = mat.m9;
-    buffer[7] = mat.m13;
-    buffer[8] = mat.m2;
-    buffer[9] = mat.m6;
-    buffer[10] = mat.m10;
-    buffer[11] = mat.m14;
-    buffer[12] = mat.m3;
-    buffer[13] = mat.m7;
-    buffer[14] = mat.m11;
-    buffer[15] = mat.m15;
-
-    return buffer;
 }

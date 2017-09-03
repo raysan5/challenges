@@ -15,7 +15,7 @@
 *       raymath.h - Vector and matrix math functions
 *
 *   Compile example using:
-*       gcc -o $(NAME_PART).exe $(FILE_NAME) rlgl.o -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
+*       gcc -o $(NAME_PART).exe $(FILE_NAME) -Iexternal rlgl.o -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
 *
 *   This example has been created using raylib 1.7 (www.raylib.com)
 *   raylib is licensed under an unmodified zlib/libpng license (View raylib.h for details)
@@ -395,7 +395,7 @@ static void SyncFrame(void)
 static void InitGraphicsDevice(int width, int height)
 {
     // Load OpenGL 3.3 supported extensions
-    rlglLoadExtensions(glfwGetProcAddress);
+    rlLoadExtensions(glfwGetProcAddress);
 
     // Initialize OpenGL context (states and resources)
     rlglInit(width, height);
@@ -452,7 +452,7 @@ static void DrawLine(Vector2 startPos, Vector2 endPos, Color color)
 // Draw a triangle
 static void DrawTriangle(Vector2 v1, Vector2 v2, Vector2 v3, Color color)
 {
-    rlEnableTexture(GetDefaultTexture().id); // Default white texture
+    rlEnableTexture(GetTextureDefault().id); // Default white texture
 
     rlBegin(RL_QUADS);
         rlColor4ub(color.r, color.g, color.b, color.a);
@@ -546,7 +546,7 @@ static Texture2D LoadTextureFromImage(Image image)
     texture.format = UNCOMPRESSED_R8G8B8A8;
     texture.mipmaps = 1;
 
-    texture.id = rlglLoadTexture(image.data, image.width, image.height, UNCOMPRESSED_R8G8B8A8, 1);
+    texture.id = rlLoadTexture(image.data, image.width, image.height, UNCOMPRESSED_R8G8B8A8, 1);
 
     return texture;
 }

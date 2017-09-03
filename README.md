@@ -20,7 +20,7 @@ This game is developed using [raylib](http://www.raylib.com/) library.
  - Fonts loading and text drawing
  - Sounds and music loading and playing
 
-*TODO: add animated gif of expected result*
+![blocks game](01_challenge_blocks/blocks_game.gif "Blocks Game")
 
 ## [Challenge 02. Dungeon 2D game](02_challenge_dungeon2d#challenge-02-2d-dungeon-game)
 
@@ -38,7 +38,7 @@ This game is developed using raylib [rlgl](https://github.com/raysan5/raylib/blo
  - Tile map data loading from text file
  - Sprites based animation
 
-*TODO: add animated gif of expected result*
+![dungeon game](02_challenge_dungeon2d/dungeon_game.gif "Dungeon Game")
 
 ## [Challenge 03. Maze 3D game](03_challenge_maze3d#challenge-03-3d-maze-game)
 
@@ -57,7 +57,7 @@ This game is developed using [OpenGL](https://en.wikipedia.org/wiki/OpenGL) grap
  - Collision detection and resolution (AABB collisions)
  - Models loading, transform and drawing (3d meshes)
 
-*TODO: add animated gif of expected result*
+![maze game](03_challenge_maze3d/maze_game.gif "Maze Game")
 
 # License
 

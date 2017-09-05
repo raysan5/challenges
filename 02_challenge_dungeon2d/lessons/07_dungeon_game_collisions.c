@@ -5,7 +5,7 @@
 *   Description:    Sprites loading, animation and drawing
 *
 *   NOTE: This example requires OpenGL 3.3 or ES2 for shaders support,
-*         OpenGL 1.1 does not support shaders but it can also be used.
+*       OpenGL 1.1 does not support shaders but it can also be used.
 *
 *   Compile rlgl module using:
 *       gcc -c rlgl.c -Wall -std=c99 -DRLGL_STANDALONE -DRAYMATH_IMPLEMENTATION -DGRAPHICS_API_OPENGL_33
@@ -16,9 +16,6 @@
 *
 *   Compile example using:
 *       gcc -o $(NAME_PART).exe $(FILE_NAME) -Iexternal rlgl.o -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
-*
-*   This example has been created using raylib 1.7 (www.raylib.com)
-*   raylib is licensed under an unmodified zlib/libpng license (View raylib.h for details)
 *
 *   Copyright (c) 2017 Ramon Santamaria (@raysan5)
 *
@@ -69,7 +66,7 @@ typedef struct Tilemap {
     Vector2 position;           // Tilemap position in screen
 } Tilemap;
 
-#define WHITE   (Color){ 255, 255, 255, 255 }
+#define WHITE   (Color){ 255, 255, 255, 255 }       // White color definition
 
 //----------------------------------------------------------------------------------
 // Global Variables Declaration
@@ -88,6 +85,7 @@ static double targetTime = 0.0;             // Desired time for one frame, if 0 
 static char previousKeyState[512] = { 0 };  // Registers previous frame key state
 static char currentKeyState[512] = { 0 };   // Registers current frame key state
 
+// LESSON 06: Tilemap data loading and drawing
 #define TILESET_TILES  32
 
 static Rectangle tilesetRecs[TILESET_TILES] = {
@@ -109,6 +107,7 @@ static Rectangle tilesetRecs[TILESET_TILES] = {
     { 192, 96, 32, 32 }, { 224, 96, 32, 32 }    // 31, 32
 };
 
+// LESSON 07: Collision detection
 #define PLAYER_COLLISION_PADDING    12      // Player padding to detect collision with walls
 
 //----------------------------------------------------------------------------------
@@ -148,12 +147,9 @@ static void UnloadTexture(Texture2D texture);       // Unload texture data from 
 static Image LoadBMP(const char *fileName);         // Load BMP image file data
 
 static void DrawTexture(Texture2D texture, int posX, int posY, Color tint);   // Draw texture in screen position coordinates
-// Draw a Texture2D with extended parameters
-static void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint);
-// Draw a part of a texture (defined by a rectangle)
-static void DrawTextureRec(Texture2D texture, Rectangle sourceRec, Vector2 position, Color tint);
-// Draw a part of a texture (defined by a rectangle) with 'pro' parameters
-static void DrawTexturePro(Texture2D texture, Rectangle sourceRec, Rectangle destRec, Vector2 origin, float rotation, Color tint);
+static void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint);    // Draw a Texture2D with extended parameters
+static void DrawTextureRec(Texture2D texture, Rectangle sourceRec, Vector2 position, Color tint);           // Draw a part of a texture (defined by a rectangle)
+static void DrawTexturePro(Texture2D texture, Rectangle sourceRec, Rectangle destRec, Vector2 origin, float rotation, Color tint); // Draw a part of a texture (defined by a rectangle) with 'pro' parameters
 
 // LESSON 06: Tilemap data loading and drawing
 //----------------------------------------------------------------------------------
@@ -163,7 +159,7 @@ static void DrawTilemap(Tilemap map, Texture2D tileset);  // Draw tilemap using 
 
 // LESSON 07: Collision detection
 //----------------------------------------------------------------------------------
-static bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2);             // Check collision between two rectangles
+static bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2); // Check collision between two rectangles
 
 //----------------------------------------------------------------------------------
 // Main Entry point
@@ -273,9 +269,7 @@ int main(void)
 
         DrawTilemap(tilemap, texTileset);   // Draw tilemap using provide tileset
         
-        //DrawRectangleRec(player, WHITE);
-        DrawTexture(texPlayer, player.x, player.y, WHITE);
-        //DrawTexture(texTileset, 100, 100, WHITE);
+        DrawTexture(texPlayer, player.x, player.y, WHITE); // Draw player texture
         
         rlglDraw();                         // Internal buffers drawing (2D data)
 

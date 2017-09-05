@@ -18,7 +18,6 @@ This game is developed using [raylib](http://www.raylib.com/) library.
  - Collision detection and resolution
  - Textures loading and drawing
  - Fonts loading and text drawing
- - Sounds and music loading and playing
 
 ![blocks game](01_challenge_blocks/blocks_game.gif "Blocks Game")
 
@@ -35,8 +34,8 @@ This game is developed using raylib [rlgl](https://github.com/raysan5/raylib/blo
  - Inputs management (keyboard, mouse) (GLFW3)
  - Basic shaped drawing defining vertex data (immediate-mode)
  - Image loading (RAM), texture creation (VRAM) and drawing
- - Tile map data loading from text file
- - Sprites based animation
+ - Tilemap data loading from text file
+ - Tilemap drawing and collision detection
 
 ![dungeon game](02_challenge_dungeon2d/dungeon_game.gif "Dungeon Game")
 

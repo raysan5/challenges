@@ -18,6 +18,7 @@ This game is developed using [raylib](http://www.raylib.com/) library.
  - Collision detection and resolution
  - Textures loading and drawing
  - Fonts loading and text drawing
+ - Sounds and music loading and playing
 
 ![blocks game](01_challenge_blocks/blocks_game.gif "Blocks Game")
 

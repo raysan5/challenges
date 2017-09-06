@@ -71,9 +71,13 @@ The standard videogame life cycle consist of 4 parts: **Initialization -> [ Upda
 
 The following diagram shows this life cycle, the related processes for every part of the cycle and the raylib functions involved in those processes:
 
-![image](https://github.com/raysan5/raylib/blob/master/docs/images/raylib_game_loop_full.png)
+![image](https://raw.githubusercontent.com/raysan5/raylib.com/master/images/raylib_game_loop_full.png)
 
-*TODO: Add info on screen management*
+**Screens management**
+
+To manage the different screen states for our game we have multiple possible techniques, most of them out of the scope of Graphics Programming, so, we will use one of the most simple ones, based in game states tracked by a simple number.
+
+On our game loop (Update/Draw) we will just check for current game state and we will Update/Draw required data.
 
 Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
  - [core_basic_window](http://www.raylib.com/examples/web/core/loader.html?name=core_basic_window) - simple code showing a videogame life cycle

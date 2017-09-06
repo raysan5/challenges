@@ -16,8 +16,6 @@
 
 #include "raylib.h"
 
-#include <math.h>               // Basic math functionality: fabs()
-
 //----------------------------------------------------------------------------------
 // Useful values definitions 
 //----------------------------------------------------------------------------------
@@ -355,8 +353,7 @@ int main()
                     
                     // Draw GUI: player lives
                     for (int i = 0; i < player.lifes; i++) DrawRectangle(20 + 40*i, screenHeight - 30, 35, 10, LIGHTGRAY);
-                    
-                    // LESSON 06: SpriteFonts loading and text drawing
+
                     // Draw pause message when required
                     if (gamePaused) DrawText("GAME PAUSED", screenWidth/2 - MeasureText("GAME PAUSED", 40)/2, screenHeight/2 + 60, 40, GRAY);
                     
@@ -374,8 +371,6 @@ int main()
                 } break;
                 default: break;
             }
-        
-            DrawFPS(10, 10);
         
         EndDrawing();
         //----------------------------------------------------------------------------------

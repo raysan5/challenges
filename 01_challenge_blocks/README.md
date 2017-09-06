@@ -33,7 +33,7 @@ Lesson | Learning outcome | Source file | Related functions
 [06](#lesson-06-spritefonts-loading-and-text-drawing) | fonts loading and text drawing | [06_blocks_game_text.c](lessons/06_blocks_game_text.c) | LoadSpriteFont(), UnloadSpriteFont(), <br>DrawText(), DrawTextEx()
 [07](#lesson-07-sounds-and-music-loading-and-playing) | sounds and music loading and playing | [07_blocks_game_audio.c](lessons/07_blocks_game_audio.c) | InitAudioDevice(), CloseAudioDevice(), <br>LoadSound(), UnloadSound(), <br>PlaySound(), LoadMusicStream(), UnloadMusicStream(), <br>PlayMusicStream()
 
-**NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments, in the form of *TODO* points for every task to be completed. Read carefully those comments to understand every task and how implement the proposed solutions.
+**NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments. Read carefully those comments to understand every task and how implement the proposed solutions.
 
 ### Lesson 01: Introduction to raylib and videogames programming
 

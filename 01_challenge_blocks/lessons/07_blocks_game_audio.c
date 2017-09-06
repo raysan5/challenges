@@ -30,6 +30,8 @@
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
+
+// LESSON 01: Window initialization and screens management
 typedef enum GameScreen { LOGO, TITLE, GAMEPLAY, ENDING } GameScreen;
 
 // Player structure
@@ -68,36 +70,53 @@ int main()
     const int screenWidth = 800;
     const int screenHeight = 450;
 
-    // LESSON 05: Image struct
+    // LESSON 01: Window initialization and screens management
     InitWindow(screenWidth, screenHeight, "CHALLENGE 01: BLOCKS GAME");
     
-    // NOTE: If using textures, declare Texture2D variables here (after InitWindow)
-    // NOTE: If using SpriteFonts, declare SpriteFont variables here (after InitWindow)
+    // NOTE: Load resources (textures, fonts, audio) after Window initialization
     
-    // NOTE: If using sound or music, InitAudioDevice() and load Sound variables here (after InitAudioDevice)
+    // LESSON 05: Textures loading and drawing
+    Texture2D texLogo = LoadTexture("resources/raylib_logo.png");
+    Texture2D texBall = LoadTexture("resources/ball.png");
+    Texture2D texPaddle = LoadTexture("resources/paddle.png");
+    Texture2D texBrick = LoadTexture("resources/brick.png");
     
-    GameScreen screen = GAMEPLAY;   // Current game screen state
+    // LESSON 06: SpriteFonts loading and text drawing
+    SpriteFont font = LoadSpriteFont("resources/setback.png");
     
-    // TODO: Define required variables here
+    // LESSSON 07: Sounds and music loading and playing
+    InitAudioDevice();              // Initialize audio system
     
-    int framesCounter;              // General pourpose frames counter
+    Sound fxStart = LoadSound("resources/start.wav");
+    Sound fxBounce = LoadSound("resources/bounce.wav");
+    Sound fxExplode = LoadSound("resources/explosion.wav");
+    
+    Music music = LoadMusicStream("resources/blockshock.mod");
+    
+    PlayMusicStream(music);         // Start music streaming
+
+    // Game required variables
+    GameScreen screen = LOGO;       // Current game screen state
+    
+    int framesCounter = 0;          // General pourpose frames counter
     int gameResult = -1;            // Game result: 0 - Loose, 1 - Win, -1 - Not defined
     bool gamePaused = false;        // Game paused state toggle
     
-    Player player;
-    Ball ball;
-    Brick bricks[BRICKS_LINES][BRICKS_PER_LINE];
+    // NOTE: Check defined structs on top
+    Player player = { 0 };
+    Ball ball = { 0 };
+    Brick bricks[BRICKS_LINES][BRICKS_PER_LINE] = { 0 };
     
     // Initialize player
     player.position = (Vector2){ screenWidth/2, screenHeight*7/8 };
     player.speed = (Vector2){ 8.0f, 0.0f };
-    player.size = (Vector2){ screenWidth/10, 20 };
+    player.size = (Vector2){ 100, 24 };
     player.lifes = PLAYER_LIFES;
     
     // Initialize ball
-    ball.radius = 7.0f;
+    ball.radius = 10.0f;
     ball.active = false;
-    ball.position = (Vector2){ player.position.x + player.size.x/2, player.position.y - ball.radius - 1 };
+    ball.position = (Vector2){ player.position.x + player.size.x/2, player.position.y - ball.radius*2 };
     ball.speed = (Vector2){ 4.0f, 4.0f };
 
     // Initialize bricks
@@ -111,14 +130,7 @@ int main()
             bricks[j][i].active = true;
         }
     }
-    
-    // LESSON 05: Textures loading and drawing
-    
-    // LESSON 06: SpriteFonts loading and text drawing
-    
-    // LESSSON 07: Sounds and music loading and playing
-    
-    
+        
     SetTargetFPS(60);               // Set desired framerate (frames per second)
     //--------------------------------------------------------------------------------------
     
@@ -133,16 +145,27 @@ int main()
             {
                 // Update LOGO screen data here!
                 
-                // TODO: Logo fadeIn and fadeOut logic
+                framesCounter++;
+                
+                if (framesCounter > 180) 
+                {
+                    screen = TITLE;    // Change to TITLE screen after 3 seconds
+                    framesCounter = 0;
+                }
                 
             } break;
             case TITLE: 
             {
                 // Update TITLE screen data here!
                 
-                // TODO: Title animation logic
+                framesCounter++;
                 
-                // TODO: "PRESS ENTER" logic
+                // LESSON 03: Inputs management (keyboard, mouse)
+                if (IsKeyPressed(KEY_ENTER))
+                {
+                    screen = GAMEPLAY;
+                    PlaySound(fxStart);
+                }
                 
             } break;
             case GAMEPLAY:
@@ -154,6 +177,8 @@ int main()
 
                 if (!gamePaused)
                 {
+                    // LESSON 03: Inputs management (keyboard, mouse)
+                    
                     // Player movement logic
                     if (IsKeyDown(KEY_LEFT)) player.position.x -= player.speed.x;
                     if (IsKeyDown(KEY_RIGHT)) player.position.x += player.speed.x;
@@ -173,17 +198,20 @@ int main()
                         if (((ball.position.x + ball.radius) >= screenWidth) || ((ball.position.x - ball.radius) <= 0)) ball.speed.x *= -1;
                         if ((ball.position.y - ball.radius) <= 0) ball.speed.y *= -1;
                         
-                        
                         // LESSON 04: Collision detection and resolution
+                        
+                        // NOTE: For collisions we consider elements bounds parameters, 
+                        // that's independent of elements drawing but they should match texture parameters
                         
                         // Collision logic: ball vs player
                         if (CheckCollisionCircleRec(ball.position, ball.radius, player.bounds))
                         {
                             ball.speed.y *= -1;
                             ball.speed.x = (ball.position.x - (player.position.x + player.size.x/2))/player.size.x*5.0f;
+                            PlaySound(fxBounce);
                         }
                         
-                        // TODO: Collision logic: ball vs bricks
+                        // Collision logic: ball vs bricks
                         for (int j = 0; j < BRICKS_LINES; j++)
                         {
                             for (int i = 0; i < BRICKS_PER_LINE; i++)
@@ -191,10 +219,8 @@ int main()
                                 if (bricks[j][i].active && (CheckCollisionCircleRec(ball.position, ball.radius, bricks[j][i].bounds)))
                                 {
                                     bricks[j][i].active = false;
-                                    
-                                    // TODO: Calculate ball bounce vector after collision
-
                                     ball.speed.y *= -1;
+                                    PlaySound(fxExplode);
                                     
                                     break;
                                 }
@@ -212,16 +238,22 @@ int main()
                             player.lifes--;
                         }
                         
-                        // TODO: Time counter logic
+                        if (player.lifes < 0)
+                        {
+                            screen = ENDING;
+                            player.lifes = 5;
+                            framesCounter = 0;
+                        }
                     }
                     else
                     {
                         // Reset ball position
                         ball.position.x = player.position.x + player.size.x/2;
                         
-                        // Activate ball logic
+                        // LESSON 03: Inputs management (keyboard, mouse)
                         if (IsKeyPressed(KEY_SPACE))
                         {
+                            // Activate ball logic
                             ball.active = true;
                             ball.speed = (Vector2){ 0, -5.0f };
                         }
@@ -233,15 +265,22 @@ int main()
             {
                 // Update END screen data here!
                 
-                // TODO: Replay / Exit game logic
+                framesCounter++;
+                
+                // LESSON 03: Inputs management (keyboard, mouse)
                 if (IsKeyPressed(KEY_ENTER))
                 {
-                    
+                    // Replay / Exit game logic
+                    screen = TITLE;
                 }
                 
             } break;
             default: break;
         }
+        
+        // LESSSON 07: Sounds and music loading and playing
+        // NOTE: Music buffers must be refilled if consumed
+        UpdateMusicStream(music);
         //----------------------------------------------------------------------------------
         
         // Draw
@@ -256,64 +295,81 @@ int main()
                 {
                     // Draw LOGO screen here!
                     
-                    // TODO: Draw Logo
+                    // LESSON 05: Textures loading and drawing
+                    DrawTexture(texLogo, screenWidth/2 - texLogo.width/2, screenHeight/2 - texLogo.height/2, WHITE);
                     
                 } break;
                 case TITLE: 
                 {
                     // Draw TITLE screen here!
                     
-                    // TODO: Draw Title
-                    
-                    // TODO: Draw "PRESS ENTER" message
+                    // LESSON 06: SpriteFonts loading and text drawing
+                    DrawTextEx(font, "BLOCKS", (Vector2){ 100, 80 }, 160, 10, MAROON);   // Draw Title
+
+                    if ((framesCounter/30)%2 == 0) DrawText("PRESS [ENTER] to START", GetScreenWidth()/2 - MeasureText("PRESS [ENTER] to START", 20)/2, GetScreenHeight()/2 + 60, 20, DARKGRAY);
                     
                 } break;
                 case GAMEPLAY:
                 { 
                     // Draw GAMEPLAY screen here!
                     
-                    // LESSON 02: Draw basic shapes (circle, rectangle)
-                    DrawRectangle(player.position.x, player.position.y, player.size.x, player.size.y, BLACK);   // Draw player bar
-                    for (int i = 0; i < player.lifes; i++) DrawRectangle(20 + 40*i, screenHeight - 30, 35, 10, LIGHTGRAY); // Draw player lives
-                    DrawCircleV(ball.position, ball.radius, MAROON);    // Draw ball
-                    
-                    // Draw bricks
-                    for (int j = 0; j < BRICKS_LINES; j++)
-                    {
-                        for (int i = 0; i < BRICKS_PER_LINE; i++)
+                    #define LESSON05_TEXTURES         // Alternative: LESSON02_SHAPES
+                    #if defined(LESSON02_SHAPES)
+                        // LESSON 02: Draw basic shapes (circle, rectangle)
+                        DrawRectangle(player.position.x, player.position.y, player.size.x, player.size.y, BLACK);   // Draw player bar
+                        DrawCircleV(ball.position, ball.radius, MAROON);    // Draw ball
+                        
+                        // Draw bricks
+                        for (int j = 0; j < BRICKS_LINES; j++)
                         {
-                            if (bricks[j][i].active)
+                            for (int i = 0; i < BRICKS_PER_LINE; i++)
                             {
-                                if ((i + j)%2 == 0) DrawRectangle(bricks[j][i].position.x, bricks[j][i].position.y, bricks[j][i].size.x, bricks[j][i].size.y, GRAY);
-                                else DrawRectangle(bricks[j][i].position.x, bricks[j][i].position.y, bricks[j][i].size.x, bricks[j][i].size.y, DARKGRAY);
+                                if (bricks[j][i].active)
+                                {
+                                    if ((i + j)%2 == 0) DrawRectangle(bricks[j][i].position.x, bricks[j][i].position.y, bricks[j][i].size.x, bricks[j][i].size.y, GRAY);
+                                    else DrawRectangle(bricks[j][i].position.x, bricks[j][i].position.y, bricks[j][i].size.x, bricks[j][i].size.y, DARKGRAY);
+                                }
                             }
                         }
-                    }
+                    #elif defined(LESSON05_TEXTURES)
+                        // LESSON 05: Textures loading and drawing
+                        DrawTextureEx(texPaddle, player.position, 0.0f, 1.0f, WHITE);   // Draw player
+                        
+                        DrawTexture(texBall, ball.position.x - ball.radius/2, ball.position.y - ball.radius/2, MAROON);    // Draw ball
                     
-                    // TODO: Draw time counter
-                    
-                    // TODO: Draw pause message when required
-                    if (gamePaused) DrawText("GAME PAUSED", screenWidth/2 - MeasureText("GAME PAUSED", 40)/2, screenHeight/2 - 40, 40, GRAY);
-                    
-                    // DEBUG
-                    DrawRectangleRec(player.bounds, Fade(RED, 0.5f));
-                    
-                    for (int j = 0; j < BRICKS_LINES; j++)
-                    {
-                        for (int i = 0; i < BRICKS_PER_LINE; i++)
+                        // Draw bricks
+                        for (int j = 0; j < BRICKS_LINES; j++)
                         {
-                            if (bricks[j][i].active) DrawRectangleRec(bricks[j][i].bounds, Fade(BLUE, 0.5f));
+                            for (int i = 0; i < BRICKS_PER_LINE; i++)
+                            {
+                                if (bricks[j][i].active)
+                                {
+                                    // NOTE: Texture is not scaled, just using original size
+                                    
+                                    if ((i + j)%2 == 0) DrawTextureEx(texBrick, bricks[j][i].position, 0.0f, 1.0f, GRAY);
+                                    else DrawTextureEx(texBrick, bricks[j][i].position, 0.0f, 1.0f, DARKGRAY);
+                                }
+                            }
                         }
-                    }
+                    #endif
+                    
+                    // Draw GUI: player lives
+                    for (int i = 0; i < player.lifes; i++) DrawRectangle(20 + 40*i, screenHeight - 30, 35, 10, LIGHTGRAY);
+                    
+                    // LESSON 06: SpriteFonts loading and text drawing
+                    // Draw pause message when required
+                    if (gamePaused) DrawText("GAME PAUSED", screenWidth/2 - MeasureText("GAME PAUSED", 40)/2, screenHeight/2 + 60, 40, GRAY);
                     
                 } break;
                 case ENDING: 
                 {
                     // Draw END screen here!
                     
-                    // TODO: Draw ending message (win or loose)
+                    // LESSON 06: SpriteFonts loading and text drawing
+                    // Draw ending message
+                    DrawTextEx(font, "GAME FINISHED", (Vector2){ 80, 100 }, 80, 6, MAROON);
 
-                    DrawText("PRESS [ENTER] TO PLAY AGAIN", GetScreenWidth()/2 - MeasureText("PRESS [ENTER] TO PLAY AGAIN", 20)/2, GetScreenHeight()/2 - 50, 20, GRAY);
+                    if ((framesCounter/30)%2 == 0) DrawText("PRESS [ENTER] TO PLAY AGAIN", GetScreenWidth()/2 - MeasureText("PRESS [ENTER] TO PLAY AGAIN", 20)/2, GetScreenHeight()/2 + 80, 20, GRAY);
                     
                 } break;
                 default: break;
@@ -328,9 +384,26 @@ int main()
     // De-Initialization
     //--------------------------------------------------------------------------------------
     
-    // NOTE: Unload any resources (Texture2D, SpriteFont, Sound...) loaded
+    // NOTE: Unload any loaded resources (texture, fonts, audio)
     
-    CloseWindow();        // Close window and OpenGL context
+    // LESSON 05: Textures loading and drawing
+    UnloadTexture(texBall);
+    UnloadTexture(texPaddle);
+    UnloadTexture(texBrick);
+    
+    // LESSON 06: SpriteFonts loading and text drawing
+    UnloadSpriteFont(font);
+    
+    // LESSSON 07: Sounds and music loading and playing
+    UnloadSound(fxStart);
+    UnloadSound(fxBounce);
+    UnloadSound(fxExplode);
+    
+    UnloadMusicStream(music);   // Unload music streamming buffers
+    
+    CloseAudioDevice();         // Close audio device connection
+    
+    CloseWindow();              // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
     
     return 0;

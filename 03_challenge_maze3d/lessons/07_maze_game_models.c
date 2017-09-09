@@ -1522,6 +1522,8 @@ static Mesh LoadOBJ(const char *fileName)
     return mesh;
 }
 
+// Auxiliar functions
+//----------------------------------------------------------------------------------
 // Upload mesh data into VRAM
 static void UploadMeshData(Mesh *mesh)
 {

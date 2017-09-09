@@ -192,7 +192,7 @@ Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
 
 ### Lesson 07: Sounds and music loading and playing
 
-*Lesson code file to review: [07_blocks_game_sounds.c](lessons/07_blocks_game_sounds.c)*
+*Lesson code file to review: [07_blocks_game_audio.c](lessons/07_blocks_game_audio.c)*
 
 To deal with audio on raylib, first of all, audio device must be initialized. To manage audio device, use the following functions:
 ```c

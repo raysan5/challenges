@@ -5,20 +5,17 @@
 *   Description:    Input management (keyboard, mouse, gamepad) using GLFW3
 *
 *   NOTE: This example requires OpenGL 3.3 or ES2 for shaders support,
-*         OpenGL 1.1 does not support shaders but it can also be used.
+*       OpenGL 1.1 does not support shaders but it can also be used.
 *
 *   Compile rlgl module using:
-*       gcc -c rlgl.c -Wall -std=c99 -DRLGL_STANDALONE -DRAYMATH_IMPLEMENTATION -DGRAPHICS_API_OPENGL_33
+*       gcc -c external/rlgl.c -Wall -std=c99 -DRLGL_STANDALONE -DRAYMATH_IMPLEMENTATION -DGRAPHICS_API_OPENGL_33
 *
 *   NOTE: rlgl module requires the following header-only files:
 *       glad.h    - OpenGL extensions loader (stripped to only required extensions)
 *       raymath.h - Vector and matrix math functions
 *
 *   Compile example using:
-*       gcc -o $(NAME_PART).exe $(FILE_NAME) rlgl.o -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
-*
-*   This example has been created using raylib 1.7 (www.raylib.com)
-*   raylib is licensed under an unmodified zlib/libpng license (View raylib.h for details)
+*       gcc -o $(NAME_PART).exe $(FILE_NAME) -Iexternal rlgl.o -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
 *
 *   Copyright (c) 2017 Ramon Santamaria (@raysan5)
 *
@@ -29,14 +26,61 @@
 #define RLGL_STANDALONE
 #include "rlgl.h"               // rlgl library: OpenGL 1.1 immediate-mode style coding
 
+#include <stdio.h>              // Standard input-output C library
+#include <stdlib.h>             // Memory management functions: malloc(), free()
+#include <string.h>             // String manipulation functions: strrchr(), strcmp()
+
+//----------------------------------------------------------------------------------
+// Types and Structures Definition
+//----------------------------------------------------------------------------------
+
+// Rectangle type
+typedef struct Rectangle {
+    int x;
+    int y;
+    int width;
+    int height;
+} Rectangle;
+
+#define WHITE   (Color){ 255, 255, 255, 255 }       // White color definition
+
+//----------------------------------------------------------------------------------
+// Global Variables Declaration
+//----------------------------------------------------------------------------------
+
+// LESSON 01: Window and graphic device initialization and management
+GLFWwindow *window;
+
+// Timming required variables
+static double currentTime, previousTime;    // Used to track timmings
+static double frameTime = 0.0;              // Time measure for one frame
+static double targetTime = 0.0;             // Desired time for one frame, if 0 not applied
+
+// LESSON 03: Keyboard input management
+// Register keyboard states (current and previous)
+static char previousKeyState[512] = { 0 };  // Registers previous frame key state
+static char currentKeyState[512] = { 0 };   // Registers current frame key state
+
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
 //----------------------------------------------------------------------------------
-static void ErrorCallback(int error, const char* description);
-static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
-// Drawing functions (uses rlgl functionality)
-static void DrawRectangleV(Vector2 position, Vector2 size, Color color);
+// LESSON 02: Window and graphic device initialization and management
+//----------------------------------------------------------------------------------
+static void ErrorCallback(int error, const char* description);                              // GLFW3: Error callback function
+static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);   // GLFW3: Keyboard callback function
+
+static void InitWindow(int width, int height);          // Initialize window and context
+static void InitGraphicsDevice(int width, int height);  // Initialize graphic device
+static void CloseWindow(void);                          // Close window and free resources
+static void SetTargetFPS(int fps);                      // Set target FPS (maximum)
+static void SyncFrame(void);                            // Synchronize to desired framerate
+
+// LESSON 03: Inputs management (keyboard and mouse)
+//----------------------------------------------------------------------------------
+static bool IsKeyDown(int key);                     // Detect if a key is being pressed (key held down)
+static bool IsKeyPressed(int key);                  // Detect if a key has been pressed once
+static void PollInputEvents(void);                  // Poll (store) all input events
 
 //----------------------------------------------------------------------------------
 // Main Entry point
@@ -48,119 +92,44 @@ int main(void)
     const int screenWidth = 800;
     const int screenHeight = 450;
     
-    // GLFW3 Initialization + OpenGL 3.3 Context + Extensions
-    //--------------------------------------------------------
-    glfwSetErrorCallback(ErrorCallback);
+    // LESSON 01: Window and graphic device initialization and management
+    InitWindow(screenWidth, screenHeight);          // Initialize Window using GLFW3
     
-    if (!glfwInit())
-    {
-        TraceLog(WARNING, "GLFW3: Can not initialize GLFW");
-        return 1;
-    }
-    else TraceLog(INFO, "GLFW3: GLFW initialized successfully");
+    InitGraphicsDevice(screenWidth, screenHeight);  // Initialize graphic device (OpenGL)
     
-    glfwWindowHint(GLFW_SAMPLES, 4);
-    glfwWindowHint(GLFW_DEPTH_BITS, 16);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-   
-    GLFWwindow *window = glfwCreateWindow(screenWidth, screenHeight, "rlgl standalone", NULL, NULL);
-    
-    if (!window)
-    {
-        glfwTerminate();
-        return 2;
-    }
-    else TraceLog(INFO, "GLFW3: Window created successfully");
-    
-    glfwSetWindowPos(window, 200, 200);
-    
-    glfwSetKeyCallback(window, KeyCallback);
-    
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
-    
-    // Load OpenGL 3.3 supported extensions
-    rlglLoadExtensions(glfwGetProcAddress);
-    //--------------------------------------------------------
-    
-    // Initialize OpenGL context (states and resources)
-    rlglInit(screenWidth, screenHeight);
+    // Init player position
+    Rectangle player = { 100, 100, 32, 32 };
+    Rectangle oldPlayer = player;
 
-    // Initialize viewport and internal projection/modelview matrices
-    rlViewport(0, 0, screenWidth, screenHeight);
-    rlMatrixMode(RL_PROJECTION);                        // Switch to PROJECTION matrix
-    rlLoadIdentity();                                   // Reset current matrix (PROJECTION)
-    rlOrtho(0, screenWidth, screenHeight, 0, 0.0f, 1.0f); // Orthographic projection with top-left corner at (0,0)
-    rlMatrixMode(RL_MODELVIEW);                         // Switch back to MODELVIEW matrix
-    rlLoadIdentity();                                   // Reset current matrix (MODELVIEW)
-
-    rlClearColor(245, 245, 245, 255);                   // Define clear color
-    rlEnableDepthTest();                                // Enable DEPTH_TEST for 3D
-    
-    Camera camera;
-    camera.position = (Vector3){ 5.0f, 5.0f, 5.0f };    // Camera position
-    camera.target = (Vector3){ 0.0f, 0.0f, 0.0f };      // Camera looking at point
-    camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };          // Camera up vector (rotation towards target)
-    camera.fovy = 45.0f;                                // Camera field-of-view Y
-    
-    Vector3 cubePosition = { 0.0f, 0.0f, 0.0f };        // Cube default position (center)
+    SetTargetFPS(60);
     //--------------------------------------------------------------------------------------    
 
     // Main game loop    
-    while (!glfwWindowShouldClose(window)) 
+    while (!glfwWindowShouldClose(window))
     {
         // Update
         //----------------------------------------------------------------------------------
-        // ...
+        // Player movement logic
+        oldPlayer = player;
+        
+        if (IsKeyDown(GLFW_KEY_DOWN)) player.y += 2;
+        else if (IsKeyDown(GLFW_KEY_UP)) player.y -= 2;
+        
+        if (IsKeyDown(GLFW_KEY_RIGHT)) player.x += 2;
+        else if (IsKeyDown(GLFW_KEY_LEFT)) player.x -= 2;
         //----------------------------------------------------------------------------------
 
         // Draw
         //----------------------------------------------------------------------------------
         rlClearScreenBuffers();             // Clear current framebuffer
         
-            // Calculate projection matrix (from perspective) and view matrix from camera look at
-            Matrix matProj = MatrixPerspective(camera.fovy, (double)screenWidth/(double)screenHeight, 0.01, 1000.0);
-            MatrixTranspose(&matProj);
-            Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
+        // TODO: Draw some element to represent player (LESSON 04)
 
-            SetMatrixModelview(matView);    // Replace internal modelview matrix by a custom one
-            SetMatrixProjection(matProj);   // Replace internal projection matrix by a custom one
+        rlglDraw();                         // Internal buffers drawing (2D data)
 
-            DrawCube(cubePosition, 2.0f, 2.0f, 2.0f, RED);
-            DrawCubeWires(cubePosition, 2.0f, 2.0f, 2.0f, RAYWHITE);
-            DrawGrid(10, 1.0f);
-
-            // NOTE: Internal buffers drawing (3D data)
-            rlglDraw();
-            
-            // Draw '2D' elements in the scene (GUI)
-#define RLGL_CREATE_MATRIX_MANUALLY
-#if defined(RLGL_CREATE_MATRIX_MANUALLY)
-            matProj = MatrixOrtho(0.0, screenWidth, screenHeight, 0.0, 0.0, 1.0);
-            MatrixTranspose(&matProj);
-            matView = MatrixIdentity();
-            
-            SetMatrixModelview(matView);    // Replace internal modelview matrix by a custom one
-            SetMatrixProjection(matProj);   // Replace internal projection matrix by a custom one
-
-#else   // Let rlgl generate and multiply matrix internally
-
-            rlMatrixMode(RL_PROJECTION);                            // Enable internal projection matrix
-            rlLoadIdentity();                                       // Reset internal projection matrix
-            rlOrtho(0.0, screenWidth, screenHeight, 0.0, 0.0, 1.0); // Recalculate internal projection matrix
-            rlMatrixMode(RL_MODELVIEW);                             // Enable internal modelview matrix
-            rlLoadIdentity();                                       // Reset internal modelview matrix
-#endif
-            DrawRectangleV((Vector2){ 10.0f, 10.0f }, (Vector2){ 780.0f, 20.0f }, DARKGRAY);
-
-            // NOTE: Internal buffers drawing (2D data)
-            rlglDraw();
-            
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+        glfwSwapBuffers(window);            // Swap buffers: show back buffer into front
+        PollInputEvents();                  // Register input events (keyboard, mouse)
+        SyncFrame();                        // Wait required time to target framerate
         //----------------------------------------------------------------------------------
     }
 
@@ -168,8 +137,7 @@ int main(void)
     //--------------------------------------------------------------------------------------
     rlglClose();                    // Unload rlgl internal buffers and default shader/texture
     
-    glfwDestroyWindow(window);      // Close window
-    glfwTerminate();                // Free GLFW3 resources
+    CloseWindow();                  // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
     
     return 0;
@@ -182,7 +150,7 @@ int main(void)
 // GLFW3: Error callback
 static void ErrorCallback(int error, const char* description)
 {
-    TraceLog(ERROR, description);
+    TraceLog(LOG_ERROR, description);
 }
 
 // GLFW3: Keyboard callback
@@ -192,20 +160,123 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
     {
         glfwSetWindowShouldClose(window, GL_TRUE);
     }
+    else currentKeyState[key] = action;
 }
 
-// Draw rectangle using rlgl OpenGL 1.1 style coding (translated to OpenGL 3.3 internally)
-static void DrawRectangleV(Vector2 position, Vector2 size, Color color)
+// LESSON 01: Window creation and management
+//----------------------------------------------------------------------------------
+// Initialize window and context (OpenGL 3.3)
+static void InitWindow(int screenWidth, int screenHeight)
 {
-    rlBegin(RL_TRIANGLES);
-        rlColor4ub(color.r, color.g, color.b, color.a);
+    // GLFW3 Initialization + OpenGL 3.3 Context + Extensions
+    glfwSetErrorCallback(ErrorCallback);
+    
+    if (!glfwInit()) TraceLog(LOG_WARNING, "GLFW3: Can not initialize GLFW");
+    else TraceLog(LOG_INFO, "GLFW3: GLFW initialized successfully");
+    
+    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_DEPTH_BITS, 16);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+   
+    window = glfwCreateWindow(screenWidth, screenHeight, "CHALLENGE 02: 2D DUNGEON GAME", NULL, NULL);
+    
+    if (!window) glfwTerminate();
+    else TraceLog(LOG_INFO, "GLFW3: Window created successfully");
+    
+    glfwSetWindowPos(window, 200, 200);
+    
+    glfwSetKeyCallback(window, KeyCallback);
+    
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
+}
 
-        rlVertex2i(position.x, position.y);
-        rlVertex2i(position.x, position.y + size.y);
-        rlVertex2i(position.x + size.x, position.y + size.y);
+// Close window and free resources
+static void CloseWindow(void)
+{
+    glfwDestroyWindow(window);      // Close window
+    glfwTerminate();                // Free GLFW3 resources
+}
 
-        rlVertex2i(position.x, position.y);
-        rlVertex2i(position.x + size.x, position.y + size.y);
-        rlVertex2i(position.x + size.x, position.y);
-    rlEnd();
+// Set target FPS (maximum)
+static void SetTargetFPS(int fps)
+{
+    if (fps < 1) targetTime = 0.0;
+    else targetTime = 1.0/(double)fps;
+}
+
+// Synchronize to desired framerate
+static void SyncFrame(void)
+{
+    // Frame time control system
+    currentTime = glfwGetTime();
+    frameTime = currentTime - previousTime;
+    previousTime = currentTime;
+
+    // Wait for some milliseconds...
+    if (frameTime < targetTime)
+    {
+        double prevTime = glfwGetTime();
+        double nextTime = 0.0;
+
+        // Busy wait loop
+        while ((nextTime - prevTime) < (targetTime - frameTime)) nextTime = glfwGetTime();
+
+        currentTime = glfwGetTime();
+        double extraTime = currentTime - previousTime;
+        previousTime = currentTime;
+
+        frameTime += extraTime;
+    }
+}
+
+// LESSON 02: Graphic device initialization and management
+//----------------------------------------------------------------------------------
+// Initialize graphic device (OpenGL 3.3)
+static void InitGraphicsDevice(int width, int height)
+{
+    // Load OpenGL 3.3 supported extensions
+    rlLoadExtensions(glfwGetProcAddress);
+
+    // Initialize OpenGL context (states and resources)
+    rlglInit(width, height);
+
+    // Initialize viewport and internal projection/modelview matrices
+    rlViewport(0, 0, width, height);
+    rlMatrixMode(RL_PROJECTION);                        // Switch to PROJECTION matrix
+    rlLoadIdentity();                                   // Reset current matrix (PROJECTION)
+    rlOrtho(0, width, height, 0, 0.0f, 1.0f);           // Orthographic projection with top-left corner at (0,0)
+    rlMatrixMode(RL_MODELVIEW);                         // Switch back to MODELVIEW matrix
+    rlLoadIdentity();                                   // Reset current matrix (MODELVIEW)
+
+    rlClearColor(0, 0, 0, 255);                         // Define clear color (BLACK)
+    rlEnableDepthTest();                                // Enable DEPTH_TEST for 3D
+}
+
+// LESSON 03: Inputs management (keyboard and mouse)
+//----------------------------------------------------------------------------------
+// Detect if a key is being pressed (key held down)
+static bool IsKeyDown(int key)
+{
+    return glfwGetKey(window, key);
+}
+
+// Detect if a key has been pressed once
+static bool IsKeyPressed(int key)
+{
+    if ((currentKeyState[key] != previousKeyState[key]) && (currentKeyState[key] == 1)) return true;
+    else return false;
+}
+
+// Poll (store) all input events
+static void PollInputEvents(void)
+{
+    // Register previous keys states (required to check variations)
+    for (int i = 0; i < 512; i++) previousKeyState[i] = currentKeyState[i];
+
+    // Input events polling (managed by GLFW3 through callback)
+    glfwPollEvents();
 }

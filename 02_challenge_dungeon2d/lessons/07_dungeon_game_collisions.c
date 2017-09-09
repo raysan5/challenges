@@ -1,14 +1,14 @@
 /*******************************************************************************************
 *
 *   Challenge 02:   DUNGEON GAME
-*   Lesson 07:      sprites
-*   Description:    Sprites loading, animation and drawing
+*   Lesson 07:      collisions
+*   Description:    Tilemap collisions detection
 *
 *   NOTE: This example requires OpenGL 3.3 or ES2 for shaders support,
 *       OpenGL 1.1 does not support shaders but it can also be used.
 *
 *   Compile rlgl module using:
-*       gcc -c rlgl.c -Wall -std=c99 -DRLGL_STANDALONE -DRAYMATH_IMPLEMENTATION -DGRAPHICS_API_OPENGL_33
+*       gcc -c external/rlgl.c -Wall -std=c99 -DRLGL_STANDALONE -DRAYMATH_IMPLEMENTATION -DGRAPHICS_API_OPENGL_33
 *
 *   NOTE: rlgl module requires the following header-only files:
 *       glad.h    - OpenGL extensions loader (stripped to only required extensions)
@@ -72,7 +72,7 @@ typedef struct Tilemap {
 // Global Variables Declaration
 //----------------------------------------------------------------------------------
 
-// LESSON 02: Window and graphic device initialization and management
+// LESSON 01: Window and graphic device initialization and management
 GLFWwindow *window;
 
 // Timming required variables
@@ -88,6 +88,9 @@ static char currentKeyState[512] = { 0 };   // Registers current frame key state
 // LESSON 06: Tilemap data loading and drawing
 #define TILESET_TILES  32
 
+// NOTE: Tileset rectangles are directly provided in this array but
+// they can also be loaded from a file... usually generated with
+// a tilemap editor software
 static Rectangle tilesetRecs[TILESET_TILES] = {
     { 0, 0, 32, 32 }, { 32, 0, 32, 32 },        // 1, 2
     { 64, 0, 32, 32 }, { 0, 32, 32, 32 },       // 3, 4
@@ -171,7 +174,7 @@ int main(void)
     const int screenWidth = 800;
     const int screenHeight = 450;
     
-    // LESSON 02: Window and graphic device initialization and management
+    // LESSON 01: Window and graphic device initialization and management
     InitWindow(screenWidth, screenHeight);          // Initialize Window using GLFW3
     
     InitGraphicsDevice(screenWidth, screenHeight);  // Initialize graphic device (OpenGL)
@@ -181,7 +184,7 @@ int main(void)
     Texture2D texPlayer = LoadTextureFromImage(imPlayer);
     UnloadImage(imPlayer);
     
-    // Load tilemap data: tile values (tileset index) and tile colliders
+    // LESSON 06: Load tilemap data: tile values (tileset index) and tile colliders
     Tilemap tilemap = LoadTilemap("resources/tilemap.txt", "resources/tilemap_colliders.txt");
     
     tilemap.tileSize = 32;
@@ -194,36 +197,7 @@ int main(void)
     UnloadImage(imTileset);
     
     // TODO: Load tileset index rectangles
-    /*
-    Rectangle tileset[32];      // Number of tiles in tileset
-    int counter = 0;
-    
-    FILE *tsIdsFile = fopen("tileset_ids.txt", "rt");
-    
-    while (!feof(tsIdsFile))
-    {
-        fscanf(tsIdsFile, "%i", &tileIds[counter]);
-        counter++;
-    }
-    
-    fclose(tsIdsFile);
-    */
-    
     // TODO: Load tileset colliders
-    /*
-    int tileCollisions[32];     // Number of tiles in tileset
-    
-    dataFile = fopen("tileset_colliders.txt", "rt");
-    counter = 0;
-    
-    while (!feof(dataFile))
-    {
-        fscanf(dataFile, "%i", &tileCollisions[counter]);
-        counter++;
-    }
-
-    fclose(dataFile);
-    */
     
     // Init player position
     Rectangle player = { tilemap.position.x + 1*tilemap.tileSize + 8, tilemap.position.y + 1*tilemap.tileSize + 8, 8, 8 };
@@ -462,6 +436,8 @@ static void DrawTriangle(Vector2 v1, Vector2 v2, Vector2 v3, Color color)
 // Draw color-filled rectangle
 static void DrawRectangle(int posX, int posY, int width, int height, Color color)
 {
+#define TRIS_RECTANGLE
+#if defined(TRIS_RECTANGLE)
     // NOTE: We use rlgl OpenGL 1.1 style vertex definition
     rlBegin(RL_TRIANGLES);
         rlColor4ub(color.r, color.g, color.b, color.a);
@@ -474,8 +450,7 @@ static void DrawRectangle(int posX, int posY, int width, int height, Color color
         rlVertex2i(posX + width, posY + height);
         rlVertex2i(posX + width, posY);
     rlEnd();
-    
-    /*
+#else   // QUADS_RECTANGLE
     // NOTE: Alternative implementation using RL_QUADS
     rlEnableTexture(GetDefaultTexture().id);    // Default white texture
     rlBegin(RL_QUADS);
@@ -495,7 +470,7 @@ static void DrawRectangle(int posX, int posY, int width, int height, Color color
         rlVertex2f(position.x + size.x, position.y);
     rlEnd();
     rlDisableTexture();
-    */
+#endif
 }
 
 // Draw a color-filled rectangle
@@ -698,7 +673,7 @@ static void DrawTexturePro(Texture2D texture, Rectangle sourceRec, Rectangle des
 
 // LESSON 06: Tilemap data loading and drawing
 //----------------------------------------------------------------------------------
-// Load tilemap data from file
+// Load tilemap data from file (text/image)
 static Tilemap LoadTilemap(const char *valuesMap, const char *collidersMap)
 {
     Tilemap map = { 0 };
@@ -748,13 +723,13 @@ static Tilemap LoadTilemap(const char *valuesMap, const char *collidersMap)
             {
                 fscanf(collidersFile, "%i", &temp);
                 map.tiles[counter].collider = temp;
-                
-                printf("%i ", temp);
+
                 counter++;
             }
 
             fclose(collidersFile);
             
+#if DEBUG   // print tilemap information loaded
             for (int j = 0; j < map.tileCountY; j++)
             {
                 for (int i = 0; i < map.tileCountX; i++)
@@ -764,8 +739,7 @@ static Tilemap LoadTilemap(const char *valuesMap, const char *collidersMap)
                 
                 printf("\n");
             }
-            
-            printf("\n");
+#endif
         }
         else if (strcmp(fileExt, ".bmp") == 0) 
         {
@@ -775,6 +749,9 @@ static Tilemap LoadTilemap(const char *valuesMap, const char *collidersMap)
             map.tileCountY = image.height;
             
             // TODO: Load tile data from image pixel data
+            
+            // NOTE: When using images to codify map data, 
+            // lot of extra information can be codified in each pixel!
         }
     }
 
@@ -794,7 +771,7 @@ static void DrawTilemap(Tilemap map, Texture2D tileset)
     {
         for (int x = 0; x < map.tileCountX; x++)
         {
-            //DrawRectangle(map.position.x + x*map.tileSize, map.position.y + y*map.tileSize, map.tileSize, map.tileSize, (Color){ 255, 0, 0, 255 });
+            // Draw each piece of the tileset in the right position to build map
             DrawTextureRec(tileset, tilesetRecs[map.tiles[y*map.tileCountX + x].value - 1], 
                           (Vector2){ map.position.x + x*map.tileSize, map.position.y + y*map.tileSize }, WHITE);
         }

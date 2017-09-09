@@ -3,6 +3,8 @@
 
 *by Ramon Santamaria ([@raysan5](https://twitter.com/raysan5))*
 
+![dungeon game](dungeon_game.gif "Dungeon Game")
+
 ## Introduction
 In this challenge we will implement a 2D Dungeons game similar to the dungeons of [The Legend of Zelda](https://en.wikipedia.org/wiki/The_Legend_of_Zelda) classic game (Nintendo, 1986). Along this process we will learn how to manage game tiles and construct levels with them, how to manage the window and player inputs from a lower level perspective (in comparison to previous challenge), how to load image data from files and convert it to textures in GPU, how to draw basic shapes and textures and, finally, some basic 2D graphics animations (spritesheet based).
 

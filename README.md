@@ -57,7 +57,7 @@ This game is developed using [OpenGL](https://en.wikipedia.org/wiki/OpenGL) grap
  - Collision detection and resolution (AABB collisions)
  - Models loading, transform and drawing (3d meshes)
 
-![maze game](03_challenge_maze3d/maze_game.gif "Maze Game")
+![maze game](03_challenge_maze3d/maze_game.gif "Maze Game") 
 
 # License
 

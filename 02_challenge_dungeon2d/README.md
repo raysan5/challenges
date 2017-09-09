@@ -29,7 +29,7 @@ It's assumed that all concepts explained in that challenge have already been lea
  - Basic shaped drawing defining vertex data (immediate-mode)
  - Image loading (RAM), texture creation (VRAM) and drawing
  - Tile map data loading from text file
- - Sprites based animation
+ - Tile map collisions management
  
 **NOTE:** All code provided is in C language for simplicity and clearness but it's up to the student to use more complex C++ code structures (OOP) if desired.
  
@@ -43,9 +43,9 @@ Lesson | Learning outcome | Source file | Related functions
 [04](#lesson-04-basic-shapes-definition-and-drawing) | basic shapes definition | [04_dungeon_game_shapes.c](lessons/04_dungeon_game_shapes.c) | DrawLine(), DrawTriangle(), DrawRectangle()
 [05](#lesson-05-image-loading-and-texture-creation) | image data loading, <br>texture creation and drawing | [05_dungeon_game_textures.c](lessosn/05_dungeon_game_textures.c) | LoadImage(), UnloadImage(), <br>LoadTexture(), UnloadTexture(), LoadBMP()
 [06](#lesson-06-tilemap-data-loading) | tilemap data loading | [06_dungeon_game_tilemap.c](lessons/06_dungeon_game_tilemap.c) | LoadTilemap(), UnloadTileMap()
-[07](#lesson-07-collision-detection) | tilemap collision detection | [07_dungeon_game_collision.c](lessons/07_dungeon_game_collision.c) | CheckCollisionTilemap()
+[07](#lesson-07-collision-detection) | tilemap collision detection | [07_dungeon_game_collisions.c](lessons/07_dungeon_game_collisions.c) | CheckCollisionTilemap()
 
-**NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments, in the form of *TODO* points for every task to be completed. Read carefully those comments to understand every task and how implement the proposed solutions.
+**NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments. Read carefully those comments to understand every task and how implement the proposed solutions.
 
 ### Lesson 01: Window creation and management
 
@@ -114,7 +114,7 @@ void DrawRectangle(int posX, int posY, int width, int height, Color color); // D
 
 ### Lesson 05: Image loading and texture creation
 
-*Lesson code file to review: [05_dungeon_game_textures.c](lessosn/05_dungeon_game_textures.c)*
+*Lesson code file to review: [05_dungeon_game_textures.c](lessons/05_dungeon_game_textures.c)*
 
 To draw textures on our canvas, first we need to understand load some image data from an image file (probably decompressing and decodyfing read data) to obtain an array of pixels; after that, image data that is placed in RAM memory should be uploaded to VRAM memory (also referred as GPU memory) and configured with some additional display parameters, this is called **a texture**. Once image is loaded and converted to texture, it's ready to be drawn.
 
@@ -136,9 +136,7 @@ void DrawTexture(Texture2D texture, Vector2 position, Color tint); // Draw textu
 
 ### Lesson 06: Tilemap data loading
 
-*Lesson code file to review: [06_dungeon_game_tiles.c](lessons/06_dungeon_game_tiles.c)*
-
-*TODO: Explain tiles theory?*
+*Lesson code file to review: [06_dungeon_game_tiles.c](lessons/06_dungeon_game_tilemap.c)*
 
 In this lesson we will learn how to load tilemap data from a simple text file and use a tileset to draw our level based on that tilemap data. We will complete the lesson adding extra information for every tile (collision information) and multiple tile-based layers to our level.
 
@@ -150,15 +148,43 @@ void UnloadTilemap(Tilemap map);                   // Unload tilemap data from R
 void DrawTilemap(Tilemap map, Texture2D tileset, Vector2 position, float tileSize);  // Draw tilemap using tileset texture
 ```
 
+To build our map, we will use tiles. A tile is a small image piece that we use as a brick to build a level. A tilemap defines the type and position of each tile (brick) to create the level. More info about tiles [here](https://en.wikipedia.org/wiki/Tile-based_video_game).
+
+All tiles required for a level could be compiled into a single tileset image:
+
+![Tile set](images/tileset_grid.png "Tile set") 
+
+Each tile in the tileset is asigned with an ID:
+
+![Tile set IDs](images/tileset_ids.png "Tile set IDs")
+
+Tilemap consist only in an array of IDs defining how level is build using the tileset pieces:
+
+![Tilemap Level](images/tilemap_basic_ids.png "Tilemap level")
+
+The same way, we can define multiple tilemap layers, for example one layer for base map and another layer for objects of the map:
+
+![Tilemap Objects](images/tilemap_elements_layer.png "Tilemap objects")
+
+![Tilemap Objects IDs](images/tilemap_ex_ids.png "Tilemap objects IDs")
+
 ### Lesson 07: Collision detection
 
-*Lesson code file to review: [07_dungeon_game_collision.c](lessons/07_dungeon_game_collision.c)*
+*Lesson code file to review: [07_dungeon_game_collision.c](lessons/07_dungeon_game_collisions.c)*
 
 We will check tilemap collisions, to avoid player moving through blocked tiles.
 
+To check collisions, we can also use collision IDs on tileset to define which tiles are transitable, which ones are not and also, which tiles could be transitable but draw over the player (useful for trees and some walls parts):
+
+![Tile set colliders](images/tileset_colliders.png "Tile set colliders") 
+
+This tileset translates into the following tilemap collisions:
+
+![Tilemap collisions](images/tilemap_basic_collisions.png "Tilemap colliders")
+
 Functions to be implemented:
 ```c
-bool CheckCollisionTilemap(Tilemap map, Vector2 playerPos);    // Check tilemap collision
+bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2);    // Check collision between rectangles
 ```
 
 ## Getting help 

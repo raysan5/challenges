@@ -3,6 +3,8 @@
 
 *by Ramon Santamaria ([@raysan5](https://twitter.com/raysan5))*
 
+![maze game](maze_game.gif "Maze Game")
+
 ## Introduction
 In this challenge we will implement a 3D Maze game similar to classic game [Doom](https://en.wikipedia.org/wiki/Doom_(series)) (id Software, 1993). Along this process we will learn how to manage vertex data and contruct levels with it.
 

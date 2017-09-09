@@ -47,7 +47,7 @@ Lesson | Learning outcome | Source file | Related functions
 [06](#lesson-06-collision-detection-and-resolution) | collision detection and resolution | [06_maze_game_collisions.c](lessons/06_maze_game_collisions.c) | ResolveCollisionCubicmap()
 [07](#lesson-07-models-loading) | models loading and drawing | [07_maze_game_models.c](lessons/07_maze_game_models.c) | LoadModel(), LoadOBJ()
 
-**NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments, in the form of *TODO* points for every task to be completed. Read carefully those comments to understand every task and how implement the proposed solutions.
+**NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments. Read carefully those comments to understand every task and how implement the proposed solutions.
 
 ### Lesson 01: Introduction to OpenGL
 
@@ -104,9 +104,7 @@ void DrawTexture(Texture2D texture, Vector2 position, Color tint); // Draw textu
 
 *Lesson code file to review: [04_maze_game_cubicmap.c](lessons/04_maze_game_cubicmap.c)*
 
-In this lesson we are loading the level map from image data and we will generate a 3D cubes-based mesh for the level, defining all required vertex data.
-
-*TODO: Image comparing source image and generated 3D mesh*
+In this lesson we are loading the level map from image data and we will generate a 3D cubes-based mesh for the level, defining all required vertex data. Basically we will understand every white pixel as a cube with walls and every black pixel by an empty space, using this convention we will create every required cube vertex by vertex.
 
 Functions to be implemented:
 ```c
@@ -133,13 +131,11 @@ void UpdateCamera(Camera *camera);            // Update camera system with trans
 
 *Lesson code file to review: [06_maze_game_collisions.c](lessons/06_maze_game_collisions.c)*
 
-Collision detection for our 3D cubes-based map could be simplyfied to a 2D grid problem, just comparing player position and a defined player radius against cell positions in the grid that represent walls.
+Collision detection for our 3D cubes-based map could be simplyfied to a 2D grid problem, just comparing player position and a defined player radius against cell positions in the grid that represent walls. Actually, a pretty similar implementation than the one used in [Lesson 07 from Challenge 02](../02_challenge_dungeon2d/README.md#lesson-07-collision-detection).
 
-*TODO: Illustrative image?*
-
-Functions to be implemented:
+Function to be implemented:
 ```c
-Vector3 ResolveCollisionCubicmap(Image cubicmap, Vector3 position, Vector3 *playerPosition, float radius);   // Check collision between map and player data
+bool CheckCollisionCircleRec(Vector2 center, float radius, Rectangle rec);   // Check collision between circle and rectangle
 ```
 
 ### Lesson 07: Models loading
@@ -147,8 +143,6 @@ Vector3 ResolveCollisionCubicmap(Image cubicmap, Vector3 position, Vector3 *play
 *Lesson code file to review: [07_maze_game_models.c](lessons/07_maze_game_models.c)*
 
 In this lesson we will learn to load simple 3D models from OBJ fileformat, one of the most simple mesh formats. Once mesh is loaded, we can place it anywhere in the scene and draw it using a texture.
-
-*TODO: Relationship diagram between Model = Mesh + Transform + Material (Shader + Textures + Parameters)*
 
 Functions to be implemented:
 ```c

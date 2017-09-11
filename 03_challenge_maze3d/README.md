@@ -42,10 +42,10 @@ Lesson | Learning outcome | Source file | Related functions
 [01](#lesson-01-introduction-to-opengl) | opengl functionality, <br>window and context creation, <br>extensions loading | [01_maze_game_intro.c](lessons/01_maze_game_intro.c) | InitWindow(), <br>CloseWindow(), <br>InitGraphicsDevice()
 [02](#lesson-02-inputs-management) | inputs management (keyboard, mouse) | [02_maze_game_inputs.c](lessons/02_maze_game_inputs.c) | IsKeyDown(), IsKeyPressed(), <br>IsMouseButtonDown(), IsMouseButtonPressed(), <br>GetMousePosition()
 [03](#lesson-03-textures-loading) | image loading, <br>texture creation and drawing | [03_maze_game_textures.c](lessons/03_maze_game_textures.c) | LoadImage(), LoadTexture()
-[04](#lesson-04-models-loading) | models loading and drawing | [04_maze_game_models.c](lessons/04_maze_game_models.c) | LoadModel(), LoadOBJ()
-[05](#lesson-05-level-map-loading) | level map loading, <br>vertex buffers creation | [05_maze_game_cubicmap.c](lessons/05_maze_game_cubicmap.c) | LoadCubicmap(), <br>UnloadModel(), <br>DrawModel()
+[04](#lesson-04-models-loading) | models loading and drawing | [04_maze_game_models.c](lessons/04_maze_game_models.c) | LoadOBJ(), LoadModel(), <br>UnloadModel(), DrawModel()
+[05](#lesson-05-level-map-loading) | level map loading, <br>vertex buffers creation | [05_maze_game_cubicmap.c](lessons/05_maze_game_cubicmap.c) | GenMeshCubicmap()
 [06](#lesson-06-camera-system-management-1st-person) | camera system (1st person) | [06_maze_game_camera.c](lessons/06_maze_game_camera.c) | UpdateCamera()
-[07](#lesson-07-collision-detection-and-resolution) | collision detection and resolution | [07_maze_game_collisions.c](lessons/07_maze_game_collisions.c) | ResolveCollisionCubicmap()
+[07](#lesson-07-collision-detection-and-resolution) | collision detection and resolution | [07_maze_game_collisions.c](lessons/07_maze_game_collisions.c) | CheckCollisionCircleRec()
 
 **NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments. Read carefully those comments to understand every task and how implement the proposed solutions.
 

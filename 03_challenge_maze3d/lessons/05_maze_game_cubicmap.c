@@ -1,8 +1,8 @@
 /*******************************************************************************************
 *
 *   Challenge 03:   MAZE GAME
-*   Lesson 05:      camera
-*   Description:    Camera system (1st person)
+*   Lesson 05:      cubicmap loading
+*   Description:    Cubicmap generation and drawing
 *
 *   NOTE: This example requires the following header-only files:
 *       glad.h      - OpenGL extensions loader (stripped to only required extensions)
@@ -29,6 +29,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"          // Multiple image fileformats loading functions
 
+#include <stdarg.h>             // Required for TraceLog()
+
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
@@ -54,6 +56,14 @@ typedef struct Rectangle {
     int width;
     int height;
 } Rectangle;
+
+// Camera type, defines a camera position/orientation in 3d space
+typedef struct Camera {
+    Vector3 position;       // Camera position
+    Vector3 target;         // Camera target it looks-at
+    Vector3 up;             // Camera up vector (rotation over its axis)
+    float fovy;             // Camera field-of-view apperture in Y (degrees)
+} Camera;
 
 typedef enum { LOG_INFO = 0, LOG_ERROR, LOG_WARNING, LOG_DEBUG, LOG_OTHER } TraceLogType;
     
@@ -87,15 +97,23 @@ typedef struct Texture2D {
     int format;             // Data format (TextureFormat)
 } Texture2D;
 
-// LESSON 05: Camera type, defines a camera position/orientation in 3d space
-typedef struct Camera {
-    Vector3 position;       // Camera position
-    Vector3 target;         // Camera target it looks-at
-    Vector3 up;             // Camera up vector (rotation over its axis)
-    float fovy;             // Camera field-of-view apperture in Y (degrees)
-} Camera;
+// LESSON 03: Shader type (default shader)
+typedef struct Shader {
+    unsigned int id;        // Shader program id
 
-// LESSON 07: Vertex data definning a mesh
+    // Vertex attributes locations (default locations)
+    int vertexLoc;          // Vertex attribute location point    (default-location = 0)
+    int texcoordLoc;        // Texcoord attribute location point  (default-location = 1)
+    int normalLoc;          // Normal attribute location point    (default-location = 2)
+    
+    // Uniform locations
+    int mvpLoc;             // ModelView-Projection matrix uniform location point (vertex shader)
+    int colorLoc;           // Diffuse color uniform location point (fragment shader)
+    int mapTextureLoc;      // Map texture uniform location point (default-texture-unit = 0)
+
+} Shader;
+
+// LESSON 04: Vertex data defining a mesh
 typedef struct Mesh {
     int vertexCount;        // number of vertices stored in arrays
     float *vertices;        // vertex position (XYZ - 3 components per vertex) (shader-location = 0)
@@ -106,40 +124,14 @@ typedef struct Mesh {
     unsigned int vboId[3];  // OpenGL Vertex Buffer Objects id (3 types of vertex data supported)
 } Mesh;
 
-// LESSON 07: Shader type (default shader)
-typedef struct Shader {
-    unsigned int id;        // Shader program id
-
-    // Vertex attributes locations (default locations)
-    int vertexLoc;          // Vertex attribute location point    (default-location = 0)
-    int texcoordLoc;        // Texcoord attribute location point  (default-location = 1)
-    int normalLoc;          // Normal attribute location point    (default-location = 2)
-    
-    // Texture map locations (3 maps supported)
-    int mapTexture0Loc;     // Map texture uniform location point (default-texture-unit = 0)
-    int mapTexture1Loc;     // Map texture uniform location point (default-texture-unit = 1)
-    int mapTexture2Loc;     // Map texture uniform location point (default-texture-unit = 2)
-    
-    // Uniform locations
-    int mvpLoc;             // ModelView-Projection matrix uniform location point (vertex shader)
-    int colDiffuseLoc;      // Diffuse color uniform location point (fragment shader)
-    int colSpecularLoc;     // Specular color uniform location point (fragment shader)
-
-} Shader;
-
-// LESSON 07: Material type
+// LESSON 04: Material type
 typedef struct Material {
-    Shader shader;          // Default shader (supports 3 map textures: diffuse, normal, specular)
-
-    Texture2D texDiffuse;   // Diffuse texture  (binded to shader mapTexture0Loc)
-    Texture2D texNormal;    // Normal texture   (binded to shader mapTexture1Loc)
-    Texture2D texSpecular;  // Specular texture (binded to shader mapTexture2Loc)
-
+    Shader shader;          // Default shader
+    Texture2D texDiffuse;   // Diffuse texture
     Color colDiffuse;       // Diffuse color
-    Color colSpecular;      // Specular color
 } Material;
 
-// LESSON 07: Model struct
+// LESSON 04: Model struct
 // NOTE: Model is defined by its Mesh (vertex data), Material (shader) and transform matrix
 typedef struct Model {
     Mesh mesh;              // Vertex data buffers (RAM and VRAM)
@@ -147,15 +139,10 @@ typedef struct Model {
     Material material;      // Shader and textures data
 } Model;
 
-#define WHITE   (Color){ 255, 255, 255, 255 }
-
 //----------------------------------------------------------------------------------
 // Global Variables Declaration
 //----------------------------------------------------------------------------------
 GLFWwindow *window;
-
-static Texture2D texDefault;
-static Shader shdrDefault;
 
 static Matrix matProjection;                // Projection matrix to draw our world
 static Matrix matModelview;                 // Modelview matrix to draw our world
@@ -164,12 +151,16 @@ static double currentTime, previousTime;    // Used to track timmings
 static double frameTime = 0.0;              // Time measure for one frame
 static double targetTime = 0.0;             // Desired time for one frame, if 0 not applied
 
-// LESSON 03: Keyboard/mouse input management
+// LESSON 02: Keyboard/mouse input management
 // Register keyboard/mouse states (current and previous)
 static char previousKeyState[512] = { 0 };  // Registers previous frame key state
 static char currentKeyState[512] = { 0 };   // Registers current frame key state
 static char previousMouseState[3] = { 0 };  // Registers previous mouse button state
 static char currentMouseState[3] = { 0 };   // Registers current mouse button state
+
+// LESSON 03: Default texture (white) and shader
+static Shader shdrDefault;                  // Default shader to draw (vertex and fragment processing)
+static unsigned int quadId;                 // Quad VAO id to be used on texture drawing
 
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
@@ -182,7 +173,6 @@ static void MouseButtonCallback(GLFWwindow *window, int button, int action, int 
 static void MouseCursorPosCallback(GLFWwindow *window, double x, double y);
 
 void TraceLog(int msgType, const char *text, ...);      // Show trace log messages (LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DEBUG)
-static Shader LoadShaderDefault(void);                  // Load default shader (basic shader)
 
 // LESSON 01: Window and context creation, extensions loading
 //----------------------------------------------------------------------------------
@@ -203,22 +193,30 @@ static void PollInputEvents(void);                  // Poll (store) all input ev
 
 // LESSON 03: Image data loading, texture creation and drawing
 //----------------------------------------------------------------------------------
+static unsigned int LoadQuad(float width, float height); // Load quad vertex data and return id
+static Shader LoadShaderDefault(void);              // Load default shader (basic shader)
 static Image LoadImage(const char *fileName);       // Load image data to CPU memory (RAM)
 static void UnloadImage(Image image);               // Unload image data from CPU memory (RAM)
 static Color *GetImageData(Image image);            // Get pixel data from image as Color array
-static Texture2D LoadTexture(unsigned char *data, int width, int height, int format);  // Load texture data in GPU memory (VRAM)
+static Texture2D LoadTexture(unsigned char *data, int width, int height, int format);          // Load texture data in GPU memory (VRAM)
 static void UnloadTexture(Texture2D texture);       // Unload texture data from GPU memory (VRAM)
 
-//static void DrawTexture(Texture2D texture, Vector2 position, Color tint);   // Draw texture in screen position coordinates
+static void DrawTexture(Texture2D texture, Vector2 position, Color tint);   // Draw texture in screen position coordinates
 
-// LESSON 04: Level map loading, vertex buffer creation
+#define WHITE   (Color){ 255, 255, 255, 255 }
+
+// LESSON 04: Model loading, vertex buffer creation
 //----------------------------------------------------------------------------------
-static Model LoadModel(Mesh mesh, Texture2D diffuse);       // Load cubicmap (pixels image) into a 3d model
-static void UnloadModel(Model model);                       // Unload model data from memory (RAM and VRAM)
+static Mesh LoadOBJ(const char *fileName);                  // Load static mesh from OBJ file
 static void UploadMeshData(Mesh *mesh);                     // Upload mesh data into VRAM
-static Mesh GenMeshCubicmap(Image cubicmap, float cubeSize);//
+static Model LoadModel(Mesh mesh, Texture2D diffuse);       // Load mesh data and texture into a 3d model
+static void UnloadModel(Model model);                       // Unload model data from memory (RAM and VRAM)
 
-static void DrawModel(Model model, Vector3 position, float scale, Color tint);
+static void DrawModel(Model model, Vector3 position, float scale, Color tint);  // Draw model in screen
+
+// LESSON 05: Cubicmap generation, loading and drawing
+//----------------------------------------------------------------------------------
+static Mesh GenMeshCubicmap(Image cubicmap, float cubeSize); // Generate cubicmap mesh from image data
 
 //----------------------------------------------------------------------------------
 // Main Entry point
@@ -235,37 +233,48 @@ int main(void)
     
     InitGraphicsDevice(screenWidth, screenHeight);  // Initialize graphic device (OpenGL)
     
+    // LESSON 03: Init default Shader (customized for GL 3.3 and ES2)
+    shdrDefault = LoadShaderDefault();
+
     // Define our camera
     Camera camera;
-    camera.position = Vector3One();
+    camera.position = (Vector3){ 5.0f, 5.0f, 5.0f };
     camera.target = Vector3Zero();
     camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
     camera.fovy = 60.0f;
     
-    // Calculate projection matrix (from perspective) and view matrix from camera look at
+    // LESSON 03: Calculate 2D projection matrix and model transform matrix
+    //matProjection = MatrixOrtho(0.0, screenWidth, screenHeight, 0.0, 0.0, 1.0);
+    //matModelview = MatrixIdentity();
+
+    // LESSON 04: Calculate 3D projection matrix (from perspective) and view matrix from camera look at
     matProjection = MatrixPerspective(camera.fovy*DEG2RAD, (double)screenWidth/(double)screenHeight, 0.01, 1000.0);
     matModelview = MatrixLookAt(camera.position, camera.target, camera.up);
+
+    // LESSON 04: Load 3d model
+    //Mesh mesh = LoadOBJ("resources/dwarf.obj");     // Load mesh data from OBJ file
+    //UploadMeshData(&mesh);                          // Upload mesh data to GPU memory (VRAM)
     
-    // 2D projection
-    // matProjection = MatrixOrtho(0.0, screenWidth, screenHeight, 0.0, 0.0, 1.0);
-    // matModelview = MatrixIdentity();
+    // LESSON 04: Load model diffuse texture
+    //Image image = LoadImage("resources/dwarf_diffuse.png");
+    //Texture2D texture = LoadTexture(image.data, image.width, image.height, image.format);
+    //UnloadImage(image);
     
-    // Load cubicmap mesh from image
+    // LESSON 05: Cubicmap generation
     Image imMap = LoadImage("resources/map04.png");
-    Mesh meshMap = GenMeshCubicmap(imMap, 1.0f);
-    UploadMeshData(&meshMap);
-    //UnloadImage(imMap);
+    Mesh mesh = GenMeshCubicmap(imMap, 1.0f);
+    UploadMeshData(&mesh);
+    UnloadImage(imMap);
     
-    Color *mapPixels = GetImageData(imMap);
+    // LESSON 05: Load cubicmap texture
+    Image image = LoadImage("resources/cubemap_atlas01.png");
+    Texture2D texture = LoadTexture(image.data, image.width, image.height, image.format);
+    UnloadImage(image);
     
-    // Load model diffuse texture
-    Image imDiffuse = LoadImage("resources/cubemap_atlas01.png");
-    Texture2D texDiffuse = LoadTexture(imDiffuse.data, imDiffuse.width, imDiffuse.height, imDiffuse.format);
-    Model map = LoadModel(meshMap, texDiffuse);
-    UnloadImage(imDiffuse);
+    Model model = LoadModel(mesh, texture);
     
-    Vector3 mapPosition = Vector3Zero();
-    
+    Vector3 position = { -10, 0, 0};   // Model position on screen
+
     SetTargetFPS(60);
     //--------------------------------------------------------------------------------------    
 
@@ -274,35 +283,19 @@ int main(void)
     {
         // Update
         //----------------------------------------------------------------------------------
-        Vector3 oldCamPos = camera.position;
-
-        matModelview = MatrixLookAt(camera.position, camera.target, camera.up);
-        
-        // Check player collision (we simplify to 2D collision detection)
-        Vector2 playerPos = { camera.position.x, camera.position.z };
-        float playerRadius = 0.1f;  // Collision radius (player is modelled as a cilinder for collision)
-        
-        int playerCellX = (int)(playerPos.x - mapPosition.x + 0.5f);
-        int playerCellY = (int)(playerPos.y - mapPosition.z + 0.5f);
-        
-        if (IsKeyPressed(GLFW_KEY_SPACE)) printf("Player map cell position: (%i, %i)\n", playerCellX, playerCellY);
-
-        // Let's check surroindg cells for collision
-        
-        // Security check
-        if (playerCellX < 0) playerCellX = 0;
-        else if (playerCellX >= imMap.width) playerCellX = imMap.width - 1;
-        
-        if (playerCellY < 0) playerCellY = 0;
-        else if (playerCellY >= imMap.height) playerCellY = imMap.height - 1;        
+        // ...
         //----------------------------------------------------------------------------------
 
         // Draw
         //----------------------------------------------------------------------------------
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);         // Clear used buffers: Color and Depth (Depth is used for 3D)
         
-        DrawModel(map, mapPosition, 1.0f, WHITE);
-  
+        // LESSON 03: Draw loaded texture on screen
+        //DrawTexture(texture, position, WHITE);
+        
+        // LESSON 04: Draw loaded 3d model
+        DrawModel(model, position, 1.0f, WHITE);
+        
         glfwSwapBuffers(window);            // Swap buffers: show back buffer into front
         PollInputEvents();                  // Register input events (keyboard, mouse)
         SyncFrame();                        // Wait required time to target framerate
@@ -311,8 +304,8 @@ int main(void)
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
-    UnloadModel(map);
-    
+    UnloadModel(model);         // Unload model data (includes texture unloading)
+
     CloseWindow();
     //--------------------------------------------------------------------------------------
     
@@ -350,6 +343,29 @@ static void MouseCursorPosCallback(GLFWwindow *window, double x, double y)
 {
     //mousePosition.x = (float)x;
     //mousePosition.y = (float)y;
+}
+
+// Show trace log messages (LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DEBUG)
+void TraceLog(int msgType, const char *text, ...)
+{
+    va_list args;
+    va_start(args, text);
+
+    switch (msgType)
+    {
+        case LOG_INFO: fprintf(stdout, "INFO: "); break;
+        case LOG_ERROR: fprintf(stdout, "ERROR: "); break;
+        case LOG_WARNING: fprintf(stdout, "WARNING: "); break;
+        case LOG_DEBUG: fprintf(stdout, "DEBUG: "); break;
+        default: break;
+    }
+
+    vfprintf(stdout, text, args);
+    fprintf(stdout, "\n");
+
+    va_end(args);
+
+    if (msgType == LOG_ERROR) exit(1);
 }
 
 // LESSON 01: Window and context creation, extensions loading
@@ -403,14 +419,6 @@ static void InitGraphicsDevice(int width, int height)
     // Initialize OpenGL context (states and resources)
     //----------------------------------------------------------
     
-    // Init default white texture
-    unsigned char pixels[4] = { 255, 255, 255, 255 };   // 1 pixel RGBA (4 bytes)
-
-    texDefault = LoadTexture(pixels, 1, 1, UNCOMPRESSED_R8G8B8A8);
-
-    // Init default Shader (customized for GL 3.3 and ES2)
-    shdrDefault = LoadShaderDefault();
-
     // Init state: Depth test
     glDepthFunc(GL_LEQUAL);                                 // Type of depth testing to apply
     glEnable(GL_DEPTH_TEST);                                // Enable depth testing for 3D
@@ -443,8 +451,9 @@ static void InitGraphicsDevice(int width, int height)
 // Close window and free resources
 static void CloseWindow(void)
 {
-    // TODO: Unload default shader
-    glDeleteTextures(1, &texDefault.id);
+    // LESSON 03: Unload default shader
+    glUseProgram(0);
+    glDeleteProgram(shdrDefault.id);
 
     glfwDestroyWindow(window);      // Close window
     glfwTerminate();                // Free GLFW3 resources
@@ -538,6 +547,112 @@ static void PollInputEvents(void)
 
 // LESSON 03: Image data loading, texture creation and drawing
 //----------------------------------------------------------------------------------
+// Load default shader
+static Shader LoadShaderDefault(void)
+{
+    Shader shader = { 0 };
+    
+    // STEP 01: Define shader code
+    // NOTE: It can be defined in external text file and just loaded
+    //-------------------------------------------------------------------------------
+
+    // Vertex shader directly defined, no external file required
+    char vDefaultShaderStr[] =
+        "#version 330                       \n"
+        "in vec3 vertexPosition;            \n"
+        "in vec2 vertexTexCoord;            \n"
+        "in vec3 vertexNormal;              \n"
+        "out vec2 fragTexCoord;             \n"
+        "out vec3 fragNormal;               \n"
+        "uniform mat4 mvp;                  \n"
+        "void main()                        \n"
+        "{                                  \n"
+        "    fragTexCoord = vertexTexCoord; \n"
+        "    fragNormal = vertexNormal;     \n"
+        "    gl_Position = mvp*vec4(vertexPosition, 1.0); \n"
+        "}                                  \n";
+
+    // Fragment shader directly defined, no external file required
+    char fDefaultShaderStr[] =
+        "#version 330                       \n"
+        "in vec2 fragTexCoord;              \n"
+        "in vec3 fragNormal;                \n"
+        "out vec4 finalColor;               \n"
+        "uniform sampler2D texture0;        \n"
+        "uniform vec4 colDiffuse;           \n"
+        "void main()                        \n"
+        "{                                  \n"
+        "    vec4 texelColor = texture(texture0, fragTexCoord);   \n"
+        "    finalColor = texelColor*colDiffuse;        \n"
+        "}                                  \n";
+
+    // STEP 02: Load shader program 
+    // NOTE: Vertex shader and fragment shader are compiled at runtime
+    //-------------------------------------------------------------------------------
+    GLuint vertexShader;
+    GLuint fragmentShader;
+
+    vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+    const char *pvs = vDefaultShaderStr;
+    const char *pfs = fDefaultShaderStr;
+
+    glShaderSource(vertexShader, 1, &pvs, NULL);
+    glShaderSource(fragmentShader, 1, &pfs, NULL);
+    
+    glCompileShader(vertexShader);
+    glCompileShader(fragmentShader);
+
+    shader.id = glCreateProgram();
+
+    glAttachShader(shader.id, vertexShader);
+    glAttachShader(shader.id, fragmentShader);
+
+    // Default attribute shader locations must be binded before linking
+    glBindAttribLocation(shader.id, 0, "vertexPosition");
+    glBindAttribLocation(shader.id, 1, "vertexTexCoord");
+    glBindAttribLocation(shader.id, 2, "vertexNormal");
+
+    // NOTE: If some attrib name is not found in the shader, it locations becomes -1
+
+    glLinkProgram(shader.id);
+
+    // NOTE: All uniform variables are intitialised to 0 when a program links
+
+    // Shaders already compiled into program, not required any more
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    if (shader.id != 0) TraceLog(LOG_INFO, "[SHDR ID %i] Default shader loaded successfully", shader.id);
+    else TraceLog(LOG_WARNING, "[SHDR ID %i] Default shader could not be loaded", shader.id);
+
+    // STEP 03: Load default shader locations
+    // NOTE: Connection points (locations) between shader and our code must be retrieved
+    //-----------------------------------------------------------------------------------
+    if (shader.id != 0) 
+    {
+        // NOTE: Default shader attrib locations have been fixed before linking:
+        //          vertex position location    = 0
+        //          vertex texcoord location    = 1
+        //          vertex normal location      = 2
+
+        // Get handles to GLSL input attibute locations
+        shader.vertexLoc = glGetAttribLocation(shader.id, "vertexPosition");
+        shader.texcoordLoc = glGetAttribLocation(shader.id, "vertexTexCoord");
+        shader.normalLoc = glGetAttribLocation(shader.id, "vertexNormal");
+
+        // Get handles to GLSL uniform locations (vertex shader)
+        shader.mvpLoc  = glGetUniformLocation(shader.id, "mvp");
+
+        // Get handles to GLSL uniform locations (fragment shader)
+        shader.colorLoc = glGetUniformLocation(shader.id, "colDiffuse");
+        shader.mapTextureLoc = glGetUniformLocation(shader.id, "texture0");
+    }
+
+    return shader;
+}
+
 // Load image data to CPU memory (RAM)
 // NOTE: We use stb_image library to support multiple fileformats
 static Image LoadImage(const char *fileName)
@@ -586,10 +701,91 @@ static void UnloadImage(Image image)
     if (image.data != NULL) free(image.data);
 }
 
-// Unload texture data from GPU memory (VRAM)
-static void UnloadTexture(Texture2D texture)
+// Get pixel data from image as Color array
+static Color *GetImageData(Image image)
 {
-    if (texture.id > 0) glDeleteTextures(1, &texture.id);
+    Color *pixels = (Color *)malloc(image.width*image.height*sizeof(Color));
+
+    int k = 0;
+
+    for (int i = 0; i < image.width*image.height; i++)
+    {
+        switch (image.format)
+        {
+            case UNCOMPRESSED_GRAYSCALE:
+            {
+                pixels[i].r = ((unsigned char *)image.data)[k];
+                pixels[i].g = ((unsigned char *)image.data)[k];
+                pixels[i].b = ((unsigned char *)image.data)[k];
+                pixels[i].a = 255;
+
+                k++;
+            } break;
+            case UNCOMPRESSED_GRAY_ALPHA:
+            {
+                pixels[i].r = ((unsigned char *)image.data)[k];
+                pixels[i].g = ((unsigned char *)image.data)[k];
+                pixels[i].b = ((unsigned char *)image.data)[k];
+                pixels[i].a = ((unsigned char *)image.data)[k + 1];
+
+                k += 2;
+            } break;
+            case UNCOMPRESSED_R5G5B5A1:
+            {
+                unsigned short pixel = ((unsigned short *)image.data)[k];
+
+                pixels[i].r = (unsigned char)((float)((pixel & 0b1111100000000000) >> 11)*(255/31));
+                pixels[i].g = (unsigned char)((float)((pixel & 0b0000011111000000) >> 6)*(255/31));
+                pixels[i].b = (unsigned char)((float)((pixel & 0b0000000000111110) >> 1)*(255/31));
+                pixels[i].a = (unsigned char)((pixel & 0b0000000000000001)*255);
+
+                k++;
+            } break;
+            case UNCOMPRESSED_R5G6B5:
+            {
+                unsigned short pixel = ((unsigned short *)image.data)[k];
+
+                pixels[i].r = (unsigned char)((float)((pixel & 0b1111100000000000) >> 11)*(255/31));
+                pixels[i].g = (unsigned char)((float)((pixel & 0b0000011111100000) >> 5)*(255/63));
+                pixels[i].b = (unsigned char)((float)(pixel & 0b0000000000011111)*(255/31));
+                pixels[i].a = 255;
+
+                k++;
+            } break;
+            case UNCOMPRESSED_R4G4B4A4:
+            {
+                unsigned short pixel = ((unsigned short *)image.data)[k];
+
+                pixels[i].r = (unsigned char)((float)((pixel & 0b1111000000000000) >> 12)*(255/15));
+                pixels[i].g = (unsigned char)((float)((pixel & 0b0000111100000000) >> 8)*(255/15));
+                pixels[i].b = (unsigned char)((float)((pixel & 0b0000000011110000) >> 4)*(255/15));
+                pixels[i].a = (unsigned char)((float)(pixel & 0b0000000000001111)*(255/15));
+
+                k++;
+            } break;
+            case UNCOMPRESSED_R8G8B8A8:
+            {
+                pixels[i].r = ((unsigned char *)image.data)[k];
+                pixels[i].g = ((unsigned char *)image.data)[k + 1];
+                pixels[i].b = ((unsigned char *)image.data)[k + 2];
+                pixels[i].a = ((unsigned char *)image.data)[k + 3];
+
+                k += 4;
+            } break;
+            case UNCOMPRESSED_R8G8B8:
+            {
+                pixels[i].r = (unsigned char)((unsigned char *)image.data)[k];
+                pixels[i].g = (unsigned char)((unsigned char *)image.data)[k + 1];
+                pixels[i].b = (unsigned char)((unsigned char *)image.data)[k + 2];
+                pixels[i].a = 255;
+
+                k += 3;
+            } break;
+            default: TraceLog(LOG_WARNING, "Format not supported for pixel data retrieval"); break;
+        }
+    }
+
+    return pixels;
 }
 
 // Load texture data in GPU memory (VRAM)
@@ -652,10 +848,374 @@ static Texture2D LoadTexture(unsigned char *data, int width, int height, int for
     return texture;
 }
 
-// LESSON 04: Level map loading, vertex buffer creation
+// Unload texture data from GPU memory (VRAM)
+static void UnloadTexture(Texture2D texture)
+{
+    if (texture.id > 0) glDeleteTextures(1, &texture.id);
+}
+
+// Draw texture in screen position coordinates
+static void DrawTexture(Texture2D texture, Vector2 position, Color tint)
+{
+    glUseProgram(shdrDefault.id);
+
+    // Define translation matrix to translate quad to screen center
+    matModelview = MatrixTranslate(position.x, position.y, 0);
+
+    // Create modelview-projection matrix
+    Matrix matMVP = MatrixMultiply(matModelview, matProjection);
+
+    glUniformMatrix4fv(shdrDefault.mvpLoc, 1, false, MatrixToFloat(matMVP));
+    glUniform4f(shdrDefault.colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
+    glUniform1i(shdrDefault.mapTextureLoc, 0);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture.id);
+    glBindVertexArray(quadId);
+                
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+            
+    glBindTexture(GL_TEXTURE_2D, 0);    // Unbind textures
+    glBindVertexArray(0);               // Unbind VAO
+    glUseProgram(0);                    // Unbind shader program
+}
+
+// Load a quad to draw a texture
+// NOTE: We need to define positions, coordinates and normals (optional)
+static unsigned int LoadQuad(float width, float height)
+{
+    unsigned int quadVAO = 0;       // Quad VAO id
+    unsigned int quadVBO = 0;       // Quad VBO id for individual buffer
+    
+    float vertices[] = {
+        // Positions - Texture Coords
+        0.0f,    0.0f, 0.0f,   0.0f, 0.0f,
+        0.0f,  height, 0.0f,   0.0f, 1.0f,
+        width,   0.0f, 0.0f,   1.0f, 0.0f,
+        width, height, 0.0f,   1.0f, 1.0f,
+    };
+
+    // Generate quad VAO/VBO ids
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+
+    // Fill VBO buffer
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
+
+    // Link vertex attributes
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void *)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void *)(3*sizeof(float)));
+
+    return quadVAO;
+}
+// LESSON 04: Model loading, vertex buffer creation
 //----------------------------------------------------------------------------------
+// Load static mesh from OBJ file (RAM)
+static Mesh LoadOBJ(const char *fileName)
+{
+    Mesh mesh = { 0 };
+
+    char dataType;
+    char comments[200];
+
+    int vertexCount = 0;
+    int normalCount = 0;
+    int texcoordCount = 0;
+    int triangleCount = 0;
+
+    FILE *objFile = fopen(fileName, "rt");
+
+    if (objFile == NULL)
+    {
+        TraceLog(LOG_WARNING, "[%s] OBJ file could not be opened", fileName);
+        return mesh;
+    }
+
+    // First reading pass: Get vertexCount, normalCount, texcoordCount, triangleCount
+    // NOTE: vertex, texcoords and normals could be optimized (to be used indexed on faces definition)
+    // NOTE: faces MUST be defined as TRIANGLES (3 vertex per face)
+    while (!feof(objFile))
+    {
+        dataType = '\0';
+        fscanf(objFile, "%c", &dataType);
+
+        switch (dataType)
+        {
+            case '#':   // Comments
+            case 'o':   // Object name (One OBJ file can contain multible named meshes)
+            case 'g':   // Group name
+            case 's':   // Smoothing level
+            case 'm':   // mtllib [external .mtl file name]
+            case 'u':   // usemtl [material name]
+            {
+                fgets(comments, 200, objFile);
+            } break;
+            case 'v':
+            {
+                fscanf(objFile, "%c", &dataType);
+
+                if (dataType == 't')    // Read texCoord
+                {
+                    texcoordCount++;
+                    fgets(comments, 200, objFile);
+                }
+                else if (dataType == 'n')    // Read normals
+                {
+                    normalCount++;
+                    fgets(comments, 200, objFile);
+                }
+                else    // Read vertex
+                {
+                    vertexCount++;
+                    fgets(comments, 200, objFile);
+                }
+            } break;
+            case 'f':
+            {
+                triangleCount++;
+                fgets(comments, 200, objFile);
+            } break;
+            default: break;
+        }
+    }
+
+    TraceLog(LOG_DEBUG, "[%s] Mesh vertices: %i", fileName, vertexCount);
+    TraceLog(LOG_DEBUG, "[%s] Mesh texcoords: %i", fileName, texcoordCount);
+    TraceLog(LOG_DEBUG, "[%s] Mesh normals: %i", fileName, normalCount);
+    TraceLog(LOG_DEBUG, "[%s] Mesh triangles: %i", fileName, triangleCount);
+
+    // Once we know the number of vertices to store, we create required arrays
+    Vector3 *midVertices = (Vector3 *)malloc(vertexCount*sizeof(Vector3));
+    Vector3 *midNormals = NULL;
+    if (normalCount > 0) midNormals = (Vector3 *)malloc(normalCount*sizeof(Vector3));
+    Vector2 *midTexCoords = NULL;
+    if (texcoordCount > 0) midTexCoords = (Vector2 *)malloc(texcoordCount*sizeof(Vector2));
+
+    int countVertex = 0;
+    int countNormals = 0;
+    int countTexCoords = 0;
+
+    rewind(objFile);        // Return to the beginning of the file, to read again
+
+    // Second reading pass: Get vertex data to fill intermediate arrays
+    // NOTE: This second pass is required in case of multiple meshes defined in same OBJ
+    while (!feof(objFile))
+    {
+        fscanf(objFile, "%c", &dataType);
+
+        switch (dataType)
+        {
+            case '#': case 'o': case 'g': case 's': case 'm': case 'u': case 'f': fgets(comments, 200, objFile); break;
+            case 'v':
+            {
+                fscanf(objFile, "%c", &dataType);
+
+                if (dataType == 't')    // Read texCoord
+                {
+                    fscanf(objFile, "%f %f%*[^\n]s\n", &midTexCoords[countTexCoords].x, &midTexCoords[countTexCoords].y);
+                    countTexCoords++;
+
+                    fscanf(objFile, "%c", &dataType);
+                }
+                else if (dataType == 'n')    // Read normals
+                {
+                    fscanf(objFile, "%f %f %f", &midNormals[countNormals].x, &midNormals[countNormals].y, &midNormals[countNormals].z);
+                    countNormals++;
+
+                    fscanf(objFile, "%c", &dataType);
+                }
+                else    // Read vertex
+                {
+                    fscanf(objFile, "%f %f %f", &midVertices[countVertex].x, &midVertices[countVertex].y, &midVertices[countVertex].z);
+                    countVertex++;
+
+                    fscanf(objFile, "%c", &dataType);
+                }
+            } break;
+            default: break;
+        }
+    }
+
+    // At this point all vertex data (v, vt, vn) has been gathered on midVertices, midTexCoords, midNormals
+    // Now we can organize that data into our Mesh struct
+
+    mesh.vertexCount = triangleCount*3;
+
+    // Additional arrays to store vertex data as floats
+    mesh.vertices = (float *)malloc(mesh.vertexCount*3*sizeof(float));
+    mesh.texcoords = (float *)malloc(mesh.vertexCount*2*sizeof(float));
+    mesh.normals = (float *)malloc(mesh.vertexCount*3*sizeof(float));
+
+    int vCounter = 0;       // Used to count vertices float by float
+    int tcCounter = 0;      // Used to count texcoords float by float
+    int nCounter = 0;       // Used to count normals float by float
+
+    int vCount[3], vtCount[3], vnCount[3];    // Used to store triangle indices for v, vt, vn
+
+    rewind(objFile);        // Return to the beginning of the file, to read again
+
+    if (normalCount == 0) TraceLog(LOG_INFO, "[%s] No normals data on OBJ, normals will be generated from faces data", fileName);
+
+    // Third reading pass: Get faces (triangles) data and fill VertexArray
+    while (!feof(objFile))
+    {
+        fscanf(objFile, "%c", &dataType);
+
+        switch (dataType)
+        {
+            case '#': case 'o': case 'g': case 's': case 'm': case 'u': case 'v': fgets(comments, 200, objFile); break;
+            case 'f':
+            {
+                // NOTE: It could be that OBJ does not have normals or texcoords defined!
+
+                if ((normalCount == 0) && (texcoordCount == 0)) fscanf(objFile, "%i %i %i", &vCount[0], &vCount[1], &vCount[2]);
+                else if (normalCount == 0) fscanf(objFile, "%i/%i %i/%i %i/%i", &vCount[0], &vtCount[0], &vCount[1], &vtCount[1], &vCount[2], &vtCount[2]);
+                else if (texcoordCount == 0) fscanf(objFile, "%i//%i %i//%i %i//%i", &vCount[0], &vnCount[0], &vCount[1], &vnCount[1], &vCount[2], &vnCount[2]);
+                else fscanf(objFile, "%i/%i/%i %i/%i/%i %i/%i/%i", &vCount[0], &vtCount[0], &vnCount[0], &vCount[1], &vtCount[1], &vnCount[1], &vCount[2], &vtCount[2], &vnCount[2]);
+
+                mesh.vertices[vCounter] = midVertices[vCount[0]-1].x;
+                mesh.vertices[vCounter + 1] = midVertices[vCount[0]-1].y;
+                mesh.vertices[vCounter + 2] = midVertices[vCount[0]-1].z;
+                vCounter += 3;
+                mesh.vertices[vCounter] = midVertices[vCount[1]-1].x;
+                mesh.vertices[vCounter + 1] = midVertices[vCount[1]-1].y;
+                mesh.vertices[vCounter + 2] = midVertices[vCount[1]-1].z;
+                vCounter += 3;
+                mesh.vertices[vCounter] = midVertices[vCount[2]-1].x;
+                mesh.vertices[vCounter + 1] = midVertices[vCount[2]-1].y;
+                mesh.vertices[vCounter + 2] = midVertices[vCount[2]-1].z;
+                vCounter += 3;
+
+                if (normalCount > 0)
+                {
+                    mesh.normals[nCounter] = midNormals[vnCount[0]-1].x;
+                    mesh.normals[nCounter + 1] = midNormals[vnCount[0]-1].y;
+                    mesh.normals[nCounter + 2] = midNormals[vnCount[0]-1].z;
+                    nCounter += 3;
+                    mesh.normals[nCounter] = midNormals[vnCount[1]-1].x;
+                    mesh.normals[nCounter + 1] = midNormals[vnCount[1]-1].y;
+                    mesh.normals[nCounter + 2] = midNormals[vnCount[1]-1].z;
+                    nCounter += 3;
+                    mesh.normals[nCounter] = midNormals[vnCount[2]-1].x;
+                    mesh.normals[nCounter + 1] = midNormals[vnCount[2]-1].y;
+                    mesh.normals[nCounter + 2] = midNormals[vnCount[2]-1].z;
+                    nCounter += 3;
+                }
+                else
+                {
+                    // If normals not defined, they are calculated from the 3 vertices [N = (V2 - V1) x (V3 - V1)]
+                    Vector3 norm = Vector3CrossProduct(Vector3Subtract(midVertices[vCount[1]-1], midVertices[vCount[0]-1]), Vector3Subtract(midVertices[vCount[2]-1], midVertices[vCount[0]-1]));
+                    Vector3Normalize(&norm);
+
+                    mesh.normals[nCounter] = norm.x;
+                    mesh.normals[nCounter + 1] = norm.y;
+                    mesh.normals[nCounter + 2] = norm.z;
+                    nCounter += 3;
+                    mesh.normals[nCounter] = norm.x;
+                    mesh.normals[nCounter + 1] = norm.y;
+                    mesh.normals[nCounter + 2] = norm.z;
+                    nCounter += 3;
+                    mesh.normals[nCounter] = norm.x;
+                    mesh.normals[nCounter + 1] = norm.y;
+                    mesh.normals[nCounter + 2] = norm.z;
+                    nCounter += 3;
+                }
+
+                if (texcoordCount > 0)
+                {
+                    // NOTE: If using negative texture coordinates with a texture filter of GL_CLAMP_TO_EDGE doesn't work!
+                    // NOTE: Texture coordinates are Y flipped upside-down
+                    mesh.texcoords[tcCounter] = midTexCoords[vtCount[0]-1].x;
+                    mesh.texcoords[tcCounter + 1] = 1.0f - midTexCoords[vtCount[0]-1].y;
+                    tcCounter += 2;
+                    mesh.texcoords[tcCounter] = midTexCoords[vtCount[1]-1].x;
+                    mesh.texcoords[tcCounter + 1] = 1.0f - midTexCoords[vtCount[1]-1].y;
+                    tcCounter += 2;
+                    mesh.texcoords[tcCounter] = midTexCoords[vtCount[2]-1].x;
+                    mesh.texcoords[tcCounter + 1] = 1.0f - midTexCoords[vtCount[2]-1].y;
+                    tcCounter += 2;
+                }
+            } break;
+            default: break;
+        }
+    }
+
+    fclose(objFile);
+
+    // Security check, just in case no normals or no texcoords defined in OBJ
+    if (texcoordCount == 0) for (int i = 0; i < (2*mesh.vertexCount); i++) mesh.texcoords[i] = 0.0f;
+
+    // Now we can free temp mid* arrays
+    free(midVertices);
+    free(midNormals);
+    free(midTexCoords);
+
+    // NOTE: At this point we have all vertex, texcoord, normal data for the model in mesh struct
+    TraceLog(LOG_INFO, "[%s] Mesh loaded successfully in RAM (CPU)", fileName);
+    
+    // Upload mesh data into VRAM
+    UploadMeshData(&mesh);
+
+    return mesh;
+}
+
+// Upload mesh data into VRAM
+static void UploadMeshData(Mesh *mesh)
+{
+    GLuint vaoId = 0;           // Vertex Array Objects (VAO)
+    GLuint vboId[3] = { 0 };    // Vertex Buffer Objects (VBOs)
+
+    // Initialize Quads VAO (Buffer A)
+    glGenVertexArrays(1, &vaoId);
+    glBindVertexArray(vaoId);
+
+    // NOTE: Attributes must be uploaded considering default locations points
+
+    // Enable vertex attributes: position (shader-location = 0)
+    glGenBuffers(1, &vboId[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, vboId[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*3*mesh->vertexCount, mesh->vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, 0, 0, 0);
+    glEnableVertexAttribArray(0);
+
+    // Enable vertex attributes: texcoords (shader-location = 1)
+    glGenBuffers(1, &vboId[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, vboId[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*2*mesh->vertexCount, mesh->texcoords, GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 2, GL_FLOAT, 0, 0, 0);
+    glEnableVertexAttribArray(1);
+
+    // Enable vertex attributes: normals (shader-location = 2)
+    if (mesh->normals != NULL)
+    {
+        glGenBuffers(1, &vboId[2]);
+        glBindBuffer(GL_ARRAY_BUFFER, vboId[2]);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float)*3*mesh->vertexCount, mesh->normals, GL_STATIC_DRAW);
+        glVertexAttribPointer(2, 3, GL_FLOAT, 0, 0, 0);
+        glEnableVertexAttribArray(2);
+    }
+    else
+    {
+        // Default normal vertex attribute set 1.0f
+        glVertexAttrib3f(2, 1.0f, 1.0f, 1.0f);
+        glDisableVertexAttribArray(2);
+    }
+
+    mesh->vboId[0] = vboId[0];     // Vertex position VBO
+    mesh->vboId[1] = vboId[1];     // Texcoords VBO
+    mesh->vboId[2] = vboId[2];     // Normals VBO
+
+    mesh->vaoId = vaoId;
+    
+    TraceLog(LOG_INFO, "[VAO ID %i] Mesh uploaded successfully to VRAM (GPU)", mesh->vaoId);
+}
 
 // Load model (initialize)
+// NOTE: Default material uses default shader and diffuse texture
 static Model LoadModel(Mesh mesh, Texture2D diffuse)
 {
     Model model = { 0 };
@@ -672,8 +1232,20 @@ static Model LoadModel(Mesh mesh, Texture2D diffuse)
 // NOTE: Unloads Mesh data and Material shader
 static void UnloadModel(Model model)
 {
-    // TODO: Unload mesh data
-    // TODO: Unload material
+    // Unload mesh data
+    if (model.mesh.vertices != NULL) free(model.mesh.vertices);
+    if (model.mesh.texcoords != NULL) free(model.mesh.texcoords);
+    if (model.mesh.normals != NULL) free(model.mesh.normals);
+
+    if (model.mesh.vboId[0] != 0) glDeleteBuffers(1, &model.mesh.vboId[0]);   // vertex
+    if (model.mesh.vboId[1] != 0) glDeleteBuffers(1, &model.mesh.vboId[1]);   // texcoords
+    if (model.mesh.vboId[2] != 0) glDeleteBuffers(1, &model.mesh.vboId[2]);   // normals
+    
+    if (model.mesh.vaoId != 0) glDeleteVertexArrays(1, &model.mesh.vaoId);
+    
+    // Unload material texture
+    // NOTE: Default shader is unloaded on CloseWindow()
+    if (model.material.texDiffuse.id > 0) glDeleteTextures(1, &model.material.texDiffuse.id);
 }
 
 static void DrawModel(Model model, Vector3 position, float scale, Color tint)
@@ -692,40 +1264,17 @@ static void DrawModel(Model model, Vector3 position, float scale, Color tint)
     glUseProgram(model.material.shader.id);     // Bind material shader
 
     // Upload to shader material.colDiffuse
-    glUniform4f(model.material.shader.colDiffuseLoc, 
+    glUniform4f(model.material.shader.colorLoc, 
                 (float)model.material.colDiffuse.r/255, 
                 (float)model.material.colDiffuse.g/255, 
                 (float)model.material.colDiffuse.b/255, 
                 (float)model.material.colDiffuse.a/255);
 
-    // Upload to shader material.colSpecular (if available)
-    if (model.material.shader.colSpecularLoc != -1) 
-        glUniform4f(model.material.shader.colSpecularLoc, 
-                    (float)model.material.colSpecular.r/255, 
-                    (float)model.material.colSpecular.g/255, 
-                    (float)model.material.colSpecular.b/255, 
-                    (float)model.material.colSpecular.a/255);
-
     // Set shader textures (diffuse, normal, specular)
+    // NOTE: Diffuse texture fits in active texture unit 0
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, model.material.texDiffuse.id);
-    glUniform1i(model.material.shader.mapTexture0Loc, 0);           // Diffuse texture fits in active texture unit 0
-
-    if ((model.material.texNormal.id != 0) && (model.material.shader.mapTexture1Loc != -1))
-    {
-        // Enable shader normal map
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, model.material.texNormal.id);
-        glUniform1i(model.material.shader.mapTexture1Loc, 1);       // Normal texture fits in active texture unit 1
-    }
-
-    if ((model.material.texSpecular.id != 0) && (model.material.shader.mapTexture2Loc != -1))
-    {
-        // Enable shader specular map
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, model.material.texSpecular.id);
-        glUniform1i(model.material.shader.mapTexture2Loc, 2);       // Specular texture fits in active texture unit 2
-    }
+    glUniform1i(model.material.shader.mapTextureLoc, 0);
 
     // Bind mesh VAO (vertex array objects)
     glBindVertexArray(model.mesh.vaoId);
@@ -738,18 +1287,6 @@ static void DrawModel(Model model, Vector3 position, float scale, Color tint)
 
     // Draw call!
     glDrawArrays(GL_TRIANGLES, 0, model.mesh.vertexCount);
-    
-    if (model.material.texNormal.id != 0)
-    {
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
-    if (model.material.texSpecular.id != 0)
-    {
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
 
     glActiveTexture(GL_TEXTURE0);       // Set shader active texture to default 0
     glBindTexture(GL_TEXTURE_2D, 0);    // Unbind textures
@@ -757,6 +1294,8 @@ static void DrawModel(Model model, Vector3 position, float scale, Color tint)
     glUseProgram(0);                    // Unbind shader program
 }
 
+// LESSON 05: Cubicmap generation, loading and drawing
+//----------------------------------------------------------------------------------
 // Generate cubicmap mesh from image data
 static Mesh GenMeshCubicmap(Image cubicmap, float cubeSize)
 {
@@ -1111,276 +1650,4 @@ static Mesh GenMeshCubicmap(Image cubicmap, float cubeSize)
     TraceLog(LOG_INFO, "Mesh generated successfully (vertexCount: %i)", mesh.vertexCount);
 
     return mesh;
-}
-
-// Auxiliar functions
-//----------------------------------------------------------------------------------
-// Upload mesh data into VRAM
-static void UploadMeshData(Mesh *mesh)
-{
-    GLuint vaoId = 0;           // Vertex Array Objects (VAO)
-    GLuint vboId[3] = { 0 };    // Vertex Buffer Objects (VBOs)
-
-    // Initialize Quads VAO (Buffer A)
-    glGenVertexArrays(1, &vaoId);
-    glBindVertexArray(vaoId);
-
-    // NOTE: Attributes must be uploaded considering default locations points
-
-    // Enable vertex attributes: position (shader-location = 0)
-    glGenBuffers(1, &vboId[0]);
-    glBindBuffer(GL_ARRAY_BUFFER, vboId[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*3*mesh->vertexCount, mesh->vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, 0, 0, 0);
-    glEnableVertexAttribArray(0);
-
-    // Enable vertex attributes: texcoords (shader-location = 1)
-    glGenBuffers(1, &vboId[1]);
-    glBindBuffer(GL_ARRAY_BUFFER, vboId[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*2*mesh->vertexCount, mesh->texcoords, GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 2, GL_FLOAT, 0, 0, 0);
-    glEnableVertexAttribArray(1);
-
-    // Enable vertex attributes: normals (shader-location = 2)
-    if (mesh->normals != NULL)
-    {
-        glGenBuffers(1, &vboId[2]);
-        glBindBuffer(GL_ARRAY_BUFFER, vboId[2]);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float)*3*mesh->vertexCount, mesh->normals, GL_STATIC_DRAW);
-        glVertexAttribPointer(2, 3, GL_FLOAT, 0, 0, 0);
-        glEnableVertexAttribArray(2);
-    }
-    else
-    {
-        // Default normal vertex attribute set 1.0f
-        glVertexAttrib3f(2, 1.0f, 1.0f, 1.0f);
-        glDisableVertexAttribArray(2);
-    }
-
-    mesh->vboId[0] = vboId[0];     // Vertex position VBO
-    mesh->vboId[1] = vboId[1];     // Texcoords VBO
-    mesh->vboId[2] = vboId[2];     // Normals VBO
-
-    mesh->vaoId = vaoId;
-    
-    TraceLog(LOG_INFO, "[VAO ID %i] Mesh uploaded successfully to VRAM (GPU)", mesh->vaoId);
-}
-
-// Load default shader
-static Shader LoadShaderDefault(void)
-{
-    Shader shader = { 0 };
-    
-    // STEP 01: Define shader code
-    // NOTE: It can be defined in external text file and just loaded
-    //-------------------------------------------------------------------------------
-
-    // Vertex shader directly defined, no external file required
-    char vDefaultShaderStr[] =
-        "#version 330                       \n"
-        "in vec3 vertexPosition;            \n"
-        "in vec2 vertexTexCoord;            \n"
-        "in vec3 vertexNormal;              \n"
-        "out vec2 fragTexCoord;             \n"
-        "out vec3 fragNormal;               \n"
-        "uniform mat4 mvp;                  \n"
-        "void main()                        \n"
-        "{                                  \n"
-        "    fragTexCoord = vertexTexCoord; \n"
-        "    fragNormal = vertexNormal;     \n"
-        "    gl_Position = mvp*vec4(vertexPosition, 1.0); \n"
-        "}                                  \n";
-
-    // Fragment shader directly defined, no external file required
-    char fDefaultShaderStr[] =
-        "#version 330                       \n"
-        "in vec2 fragTexCoord;              \n"
-        "in vec3 fragNormal;                \n"
-        "out vec4 finalColor;               \n"
-        "uniform sampler2D texture0;        \n"
-        "uniform vec4 colDiffuse;           \n"
-        "void main()                        \n"
-        "{                                  \n"
-        "    vec4 texelColor = texture(texture0, fragTexCoord);   \n"
-        "    finalColor = texelColor*colDiffuse;        \n"
-        "}                                  \n";
-
-    // STEP 02: Load shader program 
-    // NOTE: Vertex shader and fragment shader are compiled at runtime
-    //-------------------------------------------------------------------------------
-    GLuint vertexShader;
-    GLuint fragmentShader;
-
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-
-    const char *pvs = vDefaultShaderStr;
-    const char *pfs = fDefaultShaderStr;
-
-    glShaderSource(vertexShader, 1, &pvs, NULL);
-    glShaderSource(fragmentShader, 1, &pfs, NULL);
-    
-    glCompileShader(vertexShader);
-    glCompileShader(fragmentShader);
-
-    shader.id = glCreateProgram();
-
-    glAttachShader(shader.id, vertexShader);
-    glAttachShader(shader.id, fragmentShader);
-
-    // Default attribute shader locations must be binded before linking
-    glBindAttribLocation(shader.id, 0, "vertexPosition");
-    glBindAttribLocation(shader.id, 1, "vertexTexCoord");
-    glBindAttribLocation(shader.id, 2, "vertexNormal");
-
-    // NOTE: If some attrib name is not found in the shader, it locations becomes -1
-
-    glLinkProgram(shader.id);
-
-    // NOTE: All uniform variables are intitialised to 0 when a program links
-
-    // Shaders already compiled into program, not required any more
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    if (shader.id != 0) TraceLog(LOG_INFO, "[SHDR ID %i] Default shader loaded successfully", shader.id);
-    else TraceLog(LOG_WARNING, "[SHDR ID %i] Default shader could not be loaded", shader.id);
-
-    // STEP 03: Load default shader locations
-    // NOTE: Connection points (locations) between shader and our code must be retrieved
-    //-----------------------------------------------------------------------------------
-    if (shader.id != 0) 
-    {
-        // NOTE: Default shader attrib locations have been fixed before linking:
-        //          vertex position location    = 0
-        //          vertex texcoord location    = 1
-        //          vertex normal location      = 2
-
-        // Get handles to GLSL input attibute locations
-        shader.vertexLoc = glGetAttribLocation(shader.id, "vertexPosition");
-        shader.texcoordLoc = glGetAttribLocation(shader.id, "vertexTexCoord");
-        shader.normalLoc = glGetAttribLocation(shader.id, "vertexNormal");
-
-        // Get handles to GLSL uniform locations (vertex shader)
-        shader.mvpLoc  = glGetUniformLocation(shader.id, "mvp");
-
-        // Get handles to GLSL uniform locations (fragment shader)
-        shader.colDiffuseLoc = glGetUniformLocation(shader.id, "colDiffuse");
-        shader.colSpecularLoc = glGetUniformLocation(shader.id, "colSpecular");
-        shader.mapTexture0Loc = glGetUniformLocation(shader.id, "texture0");
-        shader.mapTexture1Loc = glGetUniformLocation(shader.id, "texture1");
-        shader.mapTexture2Loc = glGetUniformLocation(shader.id, "texture2"); 
-    }
-
-    return shader;
-}
-
-// Show trace log messages (LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DEBUG)
-void TraceLog(int msgType, const char *text, ...)
-{
-    va_list args;
-    va_start(args, text);
-
-    switch (msgType)
-    {
-        case LOG_INFO: fprintf(stdout, "INFO: "); break;
-        case LOG_ERROR: fprintf(stdout, "ERROR: "); break;
-        case LOG_WARNING: fprintf(stdout, "WARNING: "); break;
-        case LOG_DEBUG: fprintf(stdout, "DEBUG: "); break;
-        default: break;
-    }
-
-    vfprintf(stdout, text, args);
-    fprintf(stdout, "\n");
-
-    va_end(args);
-
-    if (msgType == LOG_ERROR) exit(1);
-}
-
-// Get pixel data from image as Color array
-static Color *GetImageData(Image image)
-{
-    Color *pixels = (Color *)malloc(image.width*image.height*sizeof(Color));
-
-    int k = 0;
-
-    for (int i = 0; i < image.width*image.height; i++)
-    {
-        switch (image.format)
-        {
-            case UNCOMPRESSED_GRAYSCALE:
-            {
-                pixels[i].r = ((unsigned char *)image.data)[k];
-                pixels[i].g = ((unsigned char *)image.data)[k];
-                pixels[i].b = ((unsigned char *)image.data)[k];
-                pixels[i].a = 255;
-
-                k++;
-            } break;
-            case UNCOMPRESSED_GRAY_ALPHA:
-            {
-                pixels[i].r = ((unsigned char *)image.data)[k];
-                pixels[i].g = ((unsigned char *)image.data)[k];
-                pixels[i].b = ((unsigned char *)image.data)[k];
-                pixels[i].a = ((unsigned char *)image.data)[k + 1];
-
-                k += 2;
-            } break;
-            case UNCOMPRESSED_R5G5B5A1:
-            {
-                unsigned short pixel = ((unsigned short *)image.data)[k];
-
-                pixels[i].r = (unsigned char)((float)((pixel & 0b1111100000000000) >> 11)*(255/31));
-                pixels[i].g = (unsigned char)((float)((pixel & 0b0000011111000000) >> 6)*(255/31));
-                pixels[i].b = (unsigned char)((float)((pixel & 0b0000000000111110) >> 1)*(255/31));
-                pixels[i].a = (unsigned char)((pixel & 0b0000000000000001)*255);
-
-                k++;
-            } break;
-            case UNCOMPRESSED_R5G6B5:
-            {
-                unsigned short pixel = ((unsigned short *)image.data)[k];
-
-                pixels[i].r = (unsigned char)((float)((pixel & 0b1111100000000000) >> 11)*(255/31));
-                pixels[i].g = (unsigned char)((float)((pixel & 0b0000011111100000) >> 5)*(255/63));
-                pixels[i].b = (unsigned char)((float)(pixel & 0b0000000000011111)*(255/31));
-                pixels[i].a = 255;
-
-                k++;
-            } break;
-            case UNCOMPRESSED_R4G4B4A4:
-            {
-                unsigned short pixel = ((unsigned short *)image.data)[k];
-
-                pixels[i].r = (unsigned char)((float)((pixel & 0b1111000000000000) >> 12)*(255/15));
-                pixels[i].g = (unsigned char)((float)((pixel & 0b0000111100000000) >> 8)*(255/15));
-                pixels[i].b = (unsigned char)((float)((pixel & 0b0000000011110000) >> 4)*(255/15));
-                pixels[i].a = (unsigned char)((float)(pixel & 0b0000000000001111)*(255/15));
-
-                k++;
-            } break;
-            case UNCOMPRESSED_R8G8B8A8:
-            {
-                pixels[i].r = ((unsigned char *)image.data)[k];
-                pixels[i].g = ((unsigned char *)image.data)[k + 1];
-                pixels[i].b = ((unsigned char *)image.data)[k + 2];
-                pixels[i].a = ((unsigned char *)image.data)[k + 3];
-
-                k += 4;
-            } break;
-            case UNCOMPRESSED_R8G8B8:
-            {
-                pixels[i].r = (unsigned char)((unsigned char *)image.data)[k];
-                pixels[i].g = (unsigned char)((unsigned char *)image.data)[k + 1];
-                pixels[i].b = (unsigned char)((unsigned char *)image.data)[k + 2];
-                pixels[i].a = 255;
-
-                k += 3;
-            } break;
-            default: TraceLog(LOG_WARNING, "Format not supported for pixel data retrieval"); break;
-        }
-    }
-
-    return pixels;
 }

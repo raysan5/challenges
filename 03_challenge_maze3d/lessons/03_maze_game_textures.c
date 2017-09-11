@@ -133,9 +133,8 @@ static char previousMouseState[3] = { 0 };  // Registers previous mouse button s
 static char currentMouseState[3] = { 0 };   // Registers current mouse button state
 
 // LESSON 03: Default texture (white) and shader
-static Texture2D texDefault;                // Default texture to draw shapes (1x1 pixel white)
 static Shader shdrDefault;                  // Default shader to draw (vertex and fragment processing)
-static unsigned int quadVAO;                // Quad VAO id to be used on texture drawing
+static unsigned int quadId;                 // Quad VAO id to be used on texture drawing
 
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
@@ -168,14 +167,17 @@ static void PollInputEvents(void);                  // Poll (store) all input ev
 
 // LESSON 03: Image data loading, texture creation and drawing
 //----------------------------------------------------------------------------------
+static unsigned int LoadQuad(float width, float height); // Load quad vertex data and return id
 static Shader LoadShaderDefault(void);              // Load default shader (basic shader)
 static Image LoadImage(const char *fileName);       // Load image data to CPU memory (RAM)
 static void UnloadImage(Image image);               // Unload image data from CPU memory (RAM)
 static Color *GetImageData(Image image);            // Get pixel data from image as Color array
-static Texture2D LoadTexture(Image image);          // Load texture data in GPU memory (VRAM)
+static Texture2D LoadTexture(unsigned char *data, int width, int height, int format);          // Load texture data in GPU memory (VRAM)
 static void UnloadTexture(Texture2D texture);       // Unload texture data from GPU memory (VRAM)
 
 static void DrawTexture(Texture2D texture, Vector2 position, Color tint);   // Draw texture in screen position coordinates
+
+#define WHITE   (Color){ 255, 255, 255, 255 }
 
 //----------------------------------------------------------------------------------
 // Main Entry point
@@ -191,42 +193,7 @@ int main(void)
     InitWindow(screenWidth, screenHeight);          // Initialize Window using GLFW3
     
     InitGraphicsDevice(screenWidth, screenHeight);  // Initialize graphic device (OpenGL)
-    
-    // LESSON 03: Init default Shader (customized for GL 3.3 and ES2)
-    shdrDefault = LoadShaderDefault();
-    
-    // LESSON 03: Init default white texture
-    unsigned char pixels[4] = { 255, 255, 255, 255 };   // 1 pixel RGBA (4 bytes)
-    texDefault = LoadTexture(pixels, 1, 1, UNCOMPRESSED_R8G8B8A8);
-    
-    // LESSON 03: Init quad to be used to draw texture
-    unsigned int quadVBO = 0;       // Quad VBO id for individual buffer
-    
-    float vertices[] = {
-        // Positions - Texture Coords
-        -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-        1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-        1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-    };
 
-    // Generate quad VAO/VBO ids
-    glGenVertexArrays(1, &quadVAO);
-    glGenBuffers(1, &quadVBO);
-    glBindVertexArray(quadVAO);
-
-    // Fill VBO buffer
-    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
-
-    // Link vertex attributes
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void *)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void *)(3*sizeof(float)));
-
-    // NOTE: Our quad is ready to be used on drawing
-    
     // Define our camera
     Camera camera;
     camera.position = Vector3One();
@@ -234,19 +201,22 @@ int main(void)
     camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
     camera.fovy = 60.0f;
     
-    // Calculate projection matrix (from perspective) and view matrix from camera look at
-    matProjection = MatrixPerspective(camera.fovy*DEG2RAD, (double)screenWidth/(double)screenHeight, 0.01, 1000.0);
-    matModelview = MatrixLookAt(camera.position, camera.target, camera.up);
+    // LESSON 03: Calculate 2D projection matrix and model transform matrix
+    matProjection = MatrixOrtho(0.0, screenWidth, screenHeight, 0.0, 0.0, 1.0);
+    matModelview = MatrixIdentity();
+
+    // LESSON 03: Init default Shader (customized for GL 3.3 and ES2)
+    shdrDefault = LoadShaderDefault();
+
+    // LESSON 03: Load texture
+    Image image = LoadImage("resources/cubemap_atlas01.png");
+    Texture2D texture = LoadTexture(image.data, image.width, image.height, image.format);
+    UnloadImage(image);
     
-    // 2D projection
-    // matProjection = MatrixOrtho(0.0, screenWidth, screenHeight, 0.0, 0.0, 1.0);
-    // matModelview = MatrixIdentity();
-    
-    // Load model diffuse texture
-    Image imDiffuse = LoadImage("resources/cubemap_atlas01.png");
-    Texture2D texDiffuse = LoadTexture(imDiffuse);
-    UnloadImage(imDiffuse);
-    
+    // LESSON 03: Init quad to be used to draw texture
+    quadId = LoadQuad((float)texture.width, (float)texture.height);
+    Vector2 position = Vector2Zero();   // Quad position on screen
+
     SetTargetFPS(60);
     //--------------------------------------------------------------------------------------    
 
@@ -255,30 +225,29 @@ int main(void)
     {
         // Update
         //----------------------------------------------------------------------------------
-        // TODO: Check for inputs when required
+        if (IsKeyDown(GLFW_KEY_RIGHT)) position.x += 5;
+        else if (IsKeyDown(GLFW_KEY_LEFT)) position.x -= 5;
+        else if (IsKeyDown(GLFW_KEY_UP)) position.y -= 5;
+        else if (IsKeyDown(GLFW_KEY_DOWN)) position.y += 5;
         //----------------------------------------------------------------------------------
 
         // Draw
         //----------------------------------------------------------------------------------
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);         // Clear used buffers: Color and Depth (Depth is used for 3D)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);     // Clear used buffers: Color and Depth (Depth is used for 3D)
+
+        // LESSON 03: Draw loaded texture on screen
+        DrawTexture(texture, position, WHITE);
         
-        // Draw loaded texture on screen
-        //DrawTexture();
-        // Draw quad
-        glBindVertexArray(quadVAO);
-        glBindTexture(0);
-        glProgram(shdrDefault.id);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        glBindVertexArray(0);
-        
-        glfwSwapBuffers(window);            // Swap buffers: show back buffer into front
-        PollInputEvents();                  // Register input events (keyboard, mouse)
-        SyncFrame();                        // Wait required time to target framerate
+        glfwSwapBuffers(window);    // Swap buffers: show back buffer into front
+        PollInputEvents();          // Register input events (keyboard, mouse)
+        SyncFrame();                // Wait required time to target framerate
         //----------------------------------------------------------------------------------
     }
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
+    UnloadTexture(texture);
+
     CloseWindow();
     //--------------------------------------------------------------------------------------
     
@@ -427,9 +396,6 @@ static void CloseWindow(void)
     // LESSON 03: Unload default shader
     glUseProgram(0);
     glDeleteProgram(shdrDefault.id);
-    
-    // LESSON 03: Unload default texture
-    glDeleteTextures(1, &texDefault.id);
 
     glfwDestroyWindow(window);      // Close window
     glfwTerminate();                // Free GLFW3 resources
@@ -523,6 +489,40 @@ static void PollInputEvents(void)
 
 // LESSON 03: Image data loading, texture creation and drawing
 //----------------------------------------------------------------------------------
+
+// Load a quad to draw a texture
+// NOTE: We need to define positions, coordinates and normals (optional)
+static unsigned int LoadQuad(float width, float height)
+{
+    unsigned int quadVAO = 0;       // Quad VAO id
+    unsigned int quadVBO = 0;       // Quad VBO id for individual buffer
+    
+    float vertices[] = {
+        // Positions - Texture Coords
+        0.0f,    0.0f, 0.0f,   0.0f, 0.0f,
+        0.0f,  height, 0.0f,   0.0f, 1.0f,
+        width,   0.0f, 0.0f,   1.0f, 0.0f,
+        width, height, 0.0f,   1.0f, 1.0f,
+    };
+
+    // Generate quad VAO/VBO ids
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+
+    // Fill VBO buffer
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
+
+    // Link vertex attributes
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void *)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void *)(3*sizeof(float)));
+
+    return quadVAO;
+}
+
 // Load default shader
 static Shader LoadShaderDefault(void)
 {
@@ -624,7 +624,6 @@ static Shader LoadShaderDefault(void)
         // Get handles to GLSL uniform locations (fragment shader)
         shader.colorLoc = glGetUniformLocation(shader.id, "colDiffuse");
         shader.mapTextureLoc = glGetUniformLocation(shader.id, "texture0");
-
     }
 
     return shader;
@@ -834,10 +833,25 @@ static void UnloadTexture(Texture2D texture)
 // Draw texture in screen position coordinates
 static void DrawTexture(Texture2D texture, Vector2 position, Color tint)
 {
-    // TODO: To draw a texture, we need a vertex buffer (quad) with positions, coordinates and normals defined
-}
+    glUseProgram(shdrDefault.id);
 
-static unsigned int LoadQuadDefault()
-{
-    
+    // Define translation matrix to translate quad to screen center
+    matModelview = MatrixTranslate(position.x, position.y, 0);
+
+    // Create modelview-projection matrix
+    Matrix matMVP = MatrixMultiply(matModelview, matProjection);
+
+    glUniformMatrix4fv(shdrDefault.mvpLoc, 1, false, MatrixToFloat(matMVP));
+    glUniform4f(shdrDefault.colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
+    glUniform1i(shdrDefault.mapTextureLoc, 0);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture.id);
+    glBindVertexArray(quadId);
+                
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+            
+    glBindTexture(GL_TEXTURE_2D, 0);    // Unbind textures
+    glBindVertexArray(0);               // Unbind VAO
+    glUseProgram(0);                    // Unbind shader program
 }

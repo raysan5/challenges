@@ -2,7 +2,7 @@
 *
 *   Challenge 03:   MAZE GAME
 *   Lesson 03:      image loading
-*   Description:    Image loading and texture creation
+*   Description:    Image loading and texture creation and drawing
 *
 *   NOTE: This example requires the following header-only files:
 *       glad.h      - OpenGL extensions loader (stripped to only required extensions)
@@ -29,6 +29,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"          // Multiple image fileformats loading functions
 
+#include <stdarg.h>             // Required for TraceLog()
+
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
@@ -54,6 +56,14 @@ typedef struct Rectangle {
     int width;
     int height;
 } Rectangle;
+
+// Camera type, defines a camera position/orientation in 3d space
+typedef struct Camera {
+    Vector3 position;       // Camera position
+    Vector3 target;         // Camera target it looks-at
+    Vector3 up;             // Camera up vector (rotation over its axis)
+    float fovy;             // Camera field-of-view apperture in Y (degrees)
+} Camera;
 
 typedef enum { LOG_INFO = 0, LOG_ERROR, LOG_WARNING, LOG_DEBUG, LOG_OTHER } TraceLogType;
     
@@ -87,15 +97,7 @@ typedef struct Texture2D {
     int format;             // Data format (TextureFormat)
 } Texture2D;
 
-// LESSON 05: Camera type, defines a camera position/orientation in 3d space
-typedef struct Camera {
-    Vector3 position;       // Camera position
-    Vector3 target;         // Camera target it looks-at
-    Vector3 up;             // Camera up vector (rotation over its axis)
-    float fovy;             // Camera field-of-view apperture in Y (degrees)
-} Camera;
-
-// LESSON 07: Shader type (default shader)
+// LESSON 03: Shader type (default shader)
 typedef struct Shader {
     unsigned int id;        // Shader program id
 
@@ -104,27 +106,17 @@ typedef struct Shader {
     int texcoordLoc;        // Texcoord attribute location point  (default-location = 1)
     int normalLoc;          // Normal attribute location point    (default-location = 2)
     
-    // Texture map locations (3 maps supported)
-    int mapTexture0Loc;     // Map texture uniform location point (default-texture-unit = 0)
-    int mapTexture1Loc;     // Map texture uniform location point (default-texture-unit = 1)
-    int mapTexture2Loc;     // Map texture uniform location point (default-texture-unit = 2)
-    
     // Uniform locations
     int mvpLoc;             // ModelView-Projection matrix uniform location point (vertex shader)
-    int colDiffuseLoc;      // Diffuse color uniform location point (fragment shader)
-    int colSpecularLoc;     // Specular color uniform location point (fragment shader)
+    int colorLoc;           // Diffuse color uniform location point (fragment shader)
+    int mapTextureLoc;      // Map texture uniform location point (default-texture-unit = 0)
 
 } Shader;
-
-#define WHITE   (Color){ 255, 255, 255, 255 }
 
 //----------------------------------------------------------------------------------
 // Global Variables Declaration
 //----------------------------------------------------------------------------------
 GLFWwindow *window;
-
-static Texture2D texDefault;
-static Shader shdrDefault;
 
 static Matrix matProjection;                // Projection matrix to draw our world
 static Matrix matModelview;                 // Modelview matrix to draw our world
@@ -133,12 +125,17 @@ static double currentTime, previousTime;    // Used to track timmings
 static double frameTime = 0.0;              // Time measure for one frame
 static double targetTime = 0.0;             // Desired time for one frame, if 0 not applied
 
-// LESSON 03: Keyboard/mouse input management
+// LESSON 02: Keyboard/mouse input management
 // Register keyboard/mouse states (current and previous)
 static char previousKeyState[512] = { 0 };  // Registers previous frame key state
 static char currentKeyState[512] = { 0 };   // Registers current frame key state
 static char previousMouseState[3] = { 0 };  // Registers previous mouse button state
 static char currentMouseState[3] = { 0 };   // Registers current mouse button state
+
+// LESSON 03: Default texture (white) and shader
+static Texture2D texDefault;                // Default texture to draw shapes (1x1 pixel white)
+static Shader shdrDefault;                  // Default shader to draw (vertex and fragment processing)
+static unsigned int quadVAO;                // Quad VAO id to be used on texture drawing
 
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
@@ -151,7 +148,6 @@ static void MouseButtonCallback(GLFWwindow *window, int button, int action, int 
 static void MouseCursorPosCallback(GLFWwindow *window, double x, double y);
 
 void TraceLog(int msgType, const char *text, ...);      // Show trace log messages (LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DEBUG)
-static Shader LoadShaderDefault(void);                  // Load default shader (basic shader)
 
 // LESSON 01: Window and context creation, extensions loading
 //----------------------------------------------------------------------------------
@@ -172,10 +168,11 @@ static void PollInputEvents(void);                  // Poll (store) all input ev
 
 // LESSON 03: Image data loading, texture creation and drawing
 //----------------------------------------------------------------------------------
+static Shader LoadShaderDefault(void);              // Load default shader (basic shader)
 static Image LoadImage(const char *fileName);       // Load image data to CPU memory (RAM)
 static void UnloadImage(Image image);               // Unload image data from CPU memory (RAM)
 static Color *GetImageData(Image image);            // Get pixel data from image as Color array
-static Texture2D LoadTexture(unsigned char *data, int width, int height, int format);  // Load texture data in GPU memory (VRAM)
+static Texture2D LoadTexture(Image image);          // Load texture data in GPU memory (VRAM)
 static void UnloadTexture(Texture2D texture);       // Unload texture data from GPU memory (VRAM)
 
 static void DrawTexture(Texture2D texture, Vector2 position, Color tint);   // Draw texture in screen position coordinates
@@ -195,6 +192,41 @@ int main(void)
     
     InitGraphicsDevice(screenWidth, screenHeight);  // Initialize graphic device (OpenGL)
     
+    // LESSON 03: Init default Shader (customized for GL 3.3 and ES2)
+    shdrDefault = LoadShaderDefault();
+    
+    // LESSON 03: Init default white texture
+    unsigned char pixels[4] = { 255, 255, 255, 255 };   // 1 pixel RGBA (4 bytes)
+    texDefault = LoadTexture(pixels, 1, 1, UNCOMPRESSED_R8G8B8A8);
+    
+    // LESSON 03: Init quad to be used to draw texture
+    unsigned int quadVBO = 0;       // Quad VBO id for individual buffer
+    
+    float vertices[] = {
+        // Positions - Texture Coords
+        -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+        1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+        1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+    };
+
+    // Generate quad VAO/VBO ids
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+
+    // Fill VBO buffer
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
+
+    // Link vertex attributes
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void *)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void *)(3*sizeof(float)));
+
+    // NOTE: Our quad is ready to be used on drawing
+    
     // Define our camera
     Camera camera;
     camera.position = Vector3One();
@@ -212,10 +244,8 @@ int main(void)
     
     // Load model diffuse texture
     Image imDiffuse = LoadImage("resources/cubemap_atlas01.png");
-    Texture2D texDiffuse = LoadTexture(imDiffuse.data, imDiffuse.width, imDiffuse.height, imDiffuse.format);
+    Texture2D texDiffuse = LoadTexture(imDiffuse);
     UnloadImage(imDiffuse);
-    
-    Vector3 mapPosition = Vector3Zero();
     
     SetTargetFPS(60);
     //--------------------------------------------------------------------------------------    
@@ -225,25 +255,21 @@ int main(void)
     {
         // Update
         //----------------------------------------------------------------------------------
-        Vector3 oldCamPos = camera.position;
-
-        matModelview = MatrixLookAt(camera.position, camera.target, camera.up);
-        
-        // Check player collision (we simplify to 2D collision detection)
-        Vector2 playerPos = { camera.position.x, camera.position.z };
-        float playerRadius = 0.1f;  // Collision radius (player is modelled as a cilinder for collision)
-        
-        int playerCellX = (int)(playerPos.x - mapPosition.x + 0.5f);
-        int playerCellY = (int)(playerPos.y - mapPosition.z + 0.5f);
-        
-        if (IsKeyPressed(GLFW_KEY_SPACE)) printf("Player map cell position: (%i, %i)\n", playerCellX, playerCellY);
+        // TODO: Check for inputs when required
         //----------------------------------------------------------------------------------
 
         // Draw
         //----------------------------------------------------------------------------------
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);         // Clear used buffers: Color and Depth (Depth is used for 3D)
         
-        
+        // Draw loaded texture on screen
+        //DrawTexture();
+        // Draw quad
+        glBindVertexArray(quadVAO);
+        glBindTexture(0);
+        glProgram(shdrDefault.id);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        glBindVertexArray(0);
         
         glfwSwapBuffers(window);            // Swap buffers: show back buffer into front
         PollInputEvents();                  // Register input events (keyboard, mouse)
@@ -252,7 +278,7 @@ int main(void)
     }
 
     // De-Initialization
-    //--------------------------------------------------------------------------------------   
+    //--------------------------------------------------------------------------------------
     CloseWindow();
     //--------------------------------------------------------------------------------------
     
@@ -290,6 +316,29 @@ static void MouseCursorPosCallback(GLFWwindow *window, double x, double y)
 {
     //mousePosition.x = (float)x;
     //mousePosition.y = (float)y;
+}
+
+// Show trace log messages (LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DEBUG)
+void TraceLog(int msgType, const char *text, ...)
+{
+    va_list args;
+    va_start(args, text);
+
+    switch (msgType)
+    {
+        case LOG_INFO: fprintf(stdout, "INFO: "); break;
+        case LOG_ERROR: fprintf(stdout, "ERROR: "); break;
+        case LOG_WARNING: fprintf(stdout, "WARNING: "); break;
+        case LOG_DEBUG: fprintf(stdout, "DEBUG: "); break;
+        default: break;
+    }
+
+    vfprintf(stdout, text, args);
+    fprintf(stdout, "\n");
+
+    va_end(args);
+
+    if (msgType == LOG_ERROR) exit(1);
 }
 
 // LESSON 01: Window and context creation, extensions loading
@@ -343,14 +392,6 @@ static void InitGraphicsDevice(int width, int height)
     // Initialize OpenGL context (states and resources)
     //----------------------------------------------------------
     
-    // Init default white texture
-    unsigned char pixels[4] = { 255, 255, 255, 255 };   // 1 pixel RGBA (4 bytes)
-
-    texDefault = LoadTexture(pixels, 1, 1, UNCOMPRESSED_R8G8B8A8);
-
-    // Init default Shader (customized for GL 3.3 and ES2)
-    shdrDefault = LoadShaderDefault();
-
     // Init state: Depth test
     glDepthFunc(GL_LEQUAL);                                 // Type of depth testing to apply
     glEnable(GL_DEPTH_TEST);                                // Enable depth testing for 3D
@@ -383,7 +424,11 @@ static void InitGraphicsDevice(int width, int height)
 // Close window and free resources
 static void CloseWindow(void)
 {
-    // TODO: Unload default shader
+    // LESSON 03: Unload default shader
+    glUseProgram(0);
+    glDeleteProgram(shdrDefault.id);
+    
+    // LESSON 03: Unload default texture
     glDeleteTextures(1, &texDefault.id);
 
     glfwDestroyWindow(window);      // Close window
@@ -477,122 +522,6 @@ static void PollInputEvents(void)
 }
 
 // LESSON 03: Image data loading, texture creation and drawing
-//----------------------------------------------------------------------------------
-// Load image data to CPU memory (RAM)
-// NOTE: We use stb_image library to support multiple fileformats
-static Image LoadImage(const char *fileName)
-{
-    Image image = { 0 };
-    const char *fileExt;
-    
-    if ((fileExt = strrchr(fileName, '.')) != NULL)
-    {
-        // Check if file extension is supported
-        if ((strcmp(fileExt, ".bmp") == 0) ||
-            (strcmp(fileExt, ".png") == 0) ||
-            (strcmp(fileExt, ".tga") == 0) ||
-            (strcmp(fileExt, ".jpg") == 0) ||
-            (strcmp(fileExt, ".gif") == 0) ||
-            (strcmp(fileExt, ".psd") == 0))
-        {
-            int imgWidth = 0;
-            int imgHeight = 0;
-            int imgBpp = 0;
-            
-            FILE *imFile = fopen(fileName, "rb");
-            
-            if (imFile != NULL)
-            {
-                // NOTE: Using stb_image to load images (Supports: BMP, TGA, PNG, JPG, ...)
-                image.data = stbi_load_from_file(imFile, &imgWidth, &imgHeight, &imgBpp, 4);
-                
-                fclose(imFile);
-
-                image.width = imgWidth;
-                image.height = imgHeight;
-                image.format = UNCOMPRESSED_R8G8B8A8;
-                
-                TraceLog(LOG_INFO, "Image loaded successfully (%ix%i)", image.width, image.height);
-            }
-        }
-    }
-
-    return image;
-}
-
-// Unload image data from CPU memory (RAM)
-static void UnloadImage(Image image)
-{
-    if (image.data != NULL) free(image.data);
-}
-
-// Unload texture data from GPU memory (VRAM)
-static void UnloadTexture(Texture2D texture)
-{
-    if (texture.id > 0) glDeleteTextures(1, &texture.id);
-}
-
-// Load texture data in GPU memory (VRAM)
-static Texture2D LoadTexture(unsigned char *data, int width, int height, int format)
-{
-    Texture2D texture = { 0 };
-    
-    // NOTE: Texture2D struct is defined inside rlgl
-    texture.width = width;
-    texture.height = height;
-    texture.format = UNCOMPRESSED_R8G8B8A8;
-    texture.mipmaps = 1;
-    
-    glBindTexture(GL_TEXTURE_2D, 0);    // Free any old binding
-
-    glGenTextures(1, &texture.id);              // Generate Pointer to the texture
-    glBindTexture(GL_TEXTURE_2D, texture.id);
-
-    switch (format)
-    {
-        case UNCOMPRESSED_GRAYSCALE:
-        {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, (unsigned char *)data);
-
-            // With swizzleMask we define how a one channel texture will be mapped to RGBA
-            // Required GL >= 3.3 or EXT_texture_swizzle/ARB_texture_swizzle
-            GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_ONE };
-            glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
-
-            TraceLog(LOG_INFO, "[TEX ID %i] Grayscale texture loaded and swizzled", texture.id);
-        } break;
-        case UNCOMPRESSED_GRAY_ALPHA:
-        {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, width, height, 0, GL_RG, GL_UNSIGNED_BYTE, (unsigned char *)data);
-
-            GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_GREEN };
-            glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
-        } break;
-        case UNCOMPRESSED_R5G6B5: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, width, height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned short *)data); break;
-        case UNCOMPRESSED_R8G8B8: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, (unsigned char *)data); break;
-        case UNCOMPRESSED_R5G5B5A1: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, width, height, 0, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, (unsigned short *)data); break;
-        case UNCOMPRESSED_R4G4B4A4: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA4, width, height, 0, GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4, (unsigned short *)data); break;
-        case UNCOMPRESSED_R8G8B8A8: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (unsigned char *)data); break;
-        default: TraceLog(LOG_WARNING, "Texture format not recognized"); break;
-    }
-    
-    // Configure texture parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);       // Set texture to repeat on x-axis
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);       // Set texture to repeat on y-axis
-    // Magnification and minification filters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);  // Alternative: GL_LINEAR
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);  // Alternative: GL_LINEAR
-    
-    // Unbind current texture
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    if (texture.id > 0) TraceLog(LOG_INFO, "[TEX ID %i] Texture created successfully (%ix%i)", texture.id, width, height);
-    else TraceLog(LOG_WARNING, "Texture could not be created");
-
-    return texture;
-}
-
-// Auxiliar functions
 //----------------------------------------------------------------------------------
 // Load default shader
 static Shader LoadShaderDefault(void)
@@ -693,37 +622,60 @@ static Shader LoadShaderDefault(void)
         shader.mvpLoc  = glGetUniformLocation(shader.id, "mvp");
 
         // Get handles to GLSL uniform locations (fragment shader)
-        shader.colDiffuseLoc = glGetUniformLocation(shader.id, "colDiffuse");
-        shader.colSpecularLoc = glGetUniformLocation(shader.id, "colSpecular");
-        shader.mapTexture0Loc = glGetUniformLocation(shader.id, "texture0");
-        shader.mapTexture1Loc = glGetUniformLocation(shader.id, "texture1");
-        shader.mapTexture2Loc = glGetUniformLocation(shader.id, "texture2"); 
+        shader.colorLoc = glGetUniformLocation(shader.id, "colDiffuse");
+        shader.mapTextureLoc = glGetUniformLocation(shader.id, "texture0");
+
     }
 
     return shader;
 }
 
-// Show trace log messages (LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DEBUG)
-void TraceLog(int msgType, const char *text, ...)
+// Load image data to CPU memory (RAM)
+// NOTE: We use stb_image library to support multiple fileformats
+static Image LoadImage(const char *fileName)
 {
-    va_list args;
-    va_start(args, text);
-
-    switch (msgType)
+    Image image = { 0 };
+    const char *fileExt;
+    
+    if ((fileExt = strrchr(fileName, '.')) != NULL)
     {
-        case LOG_INFO: fprintf(stdout, "INFO: "); break;
-        case LOG_ERROR: fprintf(stdout, "ERROR: "); break;
-        case LOG_WARNING: fprintf(stdout, "WARNING: "); break;
-        case LOG_DEBUG: fprintf(stdout, "DEBUG: "); break;
-        default: break;
+        // Check if file extension is supported
+        if ((strcmp(fileExt, ".bmp") == 0) ||
+            (strcmp(fileExt, ".png") == 0) ||
+            (strcmp(fileExt, ".tga") == 0) ||
+            (strcmp(fileExt, ".jpg") == 0) ||
+            (strcmp(fileExt, ".gif") == 0) ||
+            (strcmp(fileExt, ".psd") == 0))
+        {
+            int imgWidth = 0;
+            int imgHeight = 0;
+            int imgBpp = 0;
+            
+            FILE *imFile = fopen(fileName, "rb");
+            
+            if (imFile != NULL)
+            {
+                // NOTE: Using stb_image to load images (Supports: BMP, TGA, PNG, JPG, ...)
+                image.data = stbi_load_from_file(imFile, &imgWidth, &imgHeight, &imgBpp, 4);
+                
+                fclose(imFile);
+
+                image.width = imgWidth;
+                image.height = imgHeight;
+                image.format = UNCOMPRESSED_R8G8B8A8;
+                
+                TraceLog(LOG_INFO, "Image loaded successfully (%ix%i)", image.width, image.height);
+            }
+        }
     }
 
-    vfprintf(stdout, text, args);
-    fprintf(stdout, "\n");
+    return image;
+}
 
-    va_end(args);
-
-    if (msgType == LOG_ERROR) exit(1);
+// Unload image data from CPU memory (RAM)
+static void UnloadImage(Image image)
+{
+    if (image.data != NULL) free(image.data);
 }
 
 // Get pixel data from image as Color array
@@ -811,4 +763,81 @@ static Color *GetImageData(Image image)
     }
 
     return pixels;
+}
+
+// Load texture data in GPU memory (VRAM)
+static Texture2D LoadTexture(unsigned char *data, int width, int height, int format)
+{
+    Texture2D texture = { 0 };
+    
+    // NOTE: Texture2D struct is defined inside rlgl
+    texture.width = width;
+    texture.height = height;
+    texture.format = UNCOMPRESSED_R8G8B8A8;
+    texture.mipmaps = 1;
+    
+    glBindTexture(GL_TEXTURE_2D, 0);    // Free any old binding
+
+    glGenTextures(1, &texture.id);              // Generate Pointer to the texture
+    glBindTexture(GL_TEXTURE_2D, texture.id);
+
+    switch (format)
+    {
+        case UNCOMPRESSED_GRAYSCALE:
+        {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, (unsigned char *)data);
+
+            // With swizzleMask we define how a one channel texture will be mapped to RGBA
+            // Required GL >= 3.3 or EXT_texture_swizzle/ARB_texture_swizzle
+            GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_ONE };
+            glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+
+            TraceLog(LOG_INFO, "[TEX ID %i] Grayscale texture loaded and swizzled", texture.id);
+        } break;
+        case UNCOMPRESSED_GRAY_ALPHA:
+        {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, width, height, 0, GL_RG, GL_UNSIGNED_BYTE, (unsigned char *)data);
+
+            GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_GREEN };
+            glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+        } break;
+        case UNCOMPRESSED_R5G6B5: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, width, height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (unsigned short *)data); break;
+        case UNCOMPRESSED_R8G8B8: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, (unsigned char *)data); break;
+        case UNCOMPRESSED_R5G5B5A1: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, width, height, 0, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, (unsigned short *)data); break;
+        case UNCOMPRESSED_R4G4B4A4: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA4, width, height, 0, GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4, (unsigned short *)data); break;
+        case UNCOMPRESSED_R8G8B8A8: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (unsigned char *)data); break;
+        default: TraceLog(LOG_WARNING, "Texture format not recognized"); break;
+    }
+    
+    // Configure texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);       // Set texture to repeat on x-axis
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);       // Set texture to repeat on y-axis
+    // Magnification and minification filters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);  // Alternative: GL_LINEAR
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);  // Alternative: GL_LINEAR
+    
+    // Unbind current texture
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    if (texture.id > 0) TraceLog(LOG_INFO, "[TEX ID %i] Texture created successfully (%ix%i)", texture.id, width, height);
+    else TraceLog(LOG_WARNING, "Texture could not be created");
+
+    return texture;
+}
+
+// Unload texture data from GPU memory (VRAM)
+static void UnloadTexture(Texture2D texture)
+{
+    if (texture.id > 0) glDeleteTextures(1, &texture.id);
+}
+
+// Draw texture in screen position coordinates
+static void DrawTexture(Texture2D texture, Vector2 position, Color tint)
+{
+    // TODO: To draw a texture, we need a vertex buffer (quad) with positions, coordinates and normals defined
+}
+
+static unsigned int LoadQuadDefault()
+{
+    
 }

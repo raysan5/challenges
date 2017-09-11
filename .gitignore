@@ -32,3 +32,6 @@
 *.dSYM/
 *.su
 
+!01_challenge_blocks/release/win32/*.exe
+!02_challenge_dungeon2d/release/win32/*.exe
+# !03_challenge_maze3d/release/win32/*.exe

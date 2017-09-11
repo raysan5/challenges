@@ -52,10 +52,10 @@ This game is developed using [OpenGL](https://en.wikipedia.org/wiki/OpenGL) grap
  - Context creation (OpenGL 3.3) and extensions loading (GLAD)
  - Inputs management (keyboard, mouse, gamepad) (GLFW3)
  - Image loading (RAM), texture creation (VRAM) and drawing
+ - Models loading, transform and drawing (3d meshes)
  - Level map data loading and vertex buffers generation (VBO)
  - Camera system creation and management (1st person)
  - Collision detection and resolution (AABB collisions)
- - Models loading, transform and drawing (3d meshes)
 
 ![maze game](03_challenge_maze3d/maze_game.gif "Maze Game") 
 

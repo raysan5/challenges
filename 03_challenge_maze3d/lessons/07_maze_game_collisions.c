@@ -321,35 +321,32 @@ int main(void)
         int playerCellX = (int)(playerPos.x - position.x + 0.5f);
         int playerCellY = (int)(playerPos.y - position.z + 0.5f);
 
-        // Let's check surroindg cells for collision
-        
-        // Security check
+        // Out-of-limits security check
         if (playerCellX < 0) playerCellX = 0;
         else if (playerCellX >= imMap.width) playerCellX = imMap.width - 1;
         
         if (playerCellY < 0) playerCellY = 0;
         else if (playerCellY >= imMap.height) playerCellY = imMap.height - 1;
         
-        // Be careful with limits! BREAKS BUILD!!!
-        //for (int y = playerCellY - 1; y < playerCellX + 1; y++)
-        //{
-        //    for (int x = playerCellX - 1; x < playerCellX + 1; x++)
-/*
-        for (int y = 0; y < imMap.width; y++)
+        // Check map collisions using image data and player position
+        for (int y = 0; y < imMap.height; y++)
         {
             for (int x = 0; x < imMap.width; x++)
             {
-                if ((mapPixels[y*imMap.width + x].r == 255) &&      // Collider
+                if ((mapPixels[y*imMap.width + x].r == 255) &&          // Collider (white pixel)
                     (CheckCollisionCircleRec(playerPos, playerRadius, 
-                    (Rectangle){ mapPosition.x + 0.5f + x*1.0f, mapPosition.y + 0.5f + y*1.0f, 1.0f, 1.0f })))
+                    (Rectangle){ position.x + 0.5f + x*1.0f, position.y + 0.5f + y*1.0f, 1.0f, 1.0f })))
                 {
-                    // Collision detected
-                    //printf("COLLISION (%i, %i)!!!\n", x, y);
+                    // Collision detected, reset camera position
                     camera.position = oldCamPos;
                 }
             }
         }
-*/
+        
+        // TODO: Improvement: Just check player surrounding cells for collision
+        // NOTE: Be careful with map limits!
+        //for (int y = playerCellY - 1; y < playerCellX + 1; y++)
+        //    for (int x = playerCellX - 1; x < playerCellX + 1; x++)
         //----------------------------------------------------------------------------------
 
         // Draw
@@ -359,7 +356,7 @@ int main(void)
         // LESSON 03: Draw loaded texture on screen
         //DrawTexture(texture, position, WHITE);
         
-        // LESSON 04: Draw loaded 3d model
+        // LESSON 04: Draw loaded 3d model (cubicmap)
         DrawModel(model, position, 1.0f, WHITE);
         
         glfwSwapBuffers(window);            // Swap buffers: show back buffer into front

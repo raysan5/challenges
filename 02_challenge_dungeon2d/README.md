@@ -188,7 +188,7 @@ bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2);    // Check collision b
 ```
 
 ## Getting help 
-We strongly encourage you using the online [raylib forum](forum.raylib.com) to discuss challenges with other students. However, we recommend not to look at any source code written by other students or share your source code with others **while working on the challenge**.
+We strongly encourage you using the online [raylib forum](http://forum.raylib.com) to discuss challenges with other students. However, we recommend not to look at any source code written by other students or share your source code with others **while working on the challenge**.
 
 ## License
 This lecture is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.

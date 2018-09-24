@@ -8,7 +8,7 @@
 ## Introduction
 In this challenge we will implement a Blocks game similar to the well-known game [Arkanoid](https://en.wikipedia.org/wiki/Arkanoid) (Taito, 1986). Along this process we will learn how the videogames life cycle works, how to manage the window and player inputs, and how to draw some graphics on screen.
 
-This game is developed using [raylib](http://www.raylib.com/), a simple and easy-to-use library to learn videogames programming.
+This game is developed using [raylib](http://www.raylib.com/), a simple and easy-to-use library to enjoy videogames programming.
 
 **Learning Outcomes:**
  - raylib functionality and possibilities

@@ -32,7 +32,7 @@ Lesson | Learning outcome | Source file | Related functions
 [03](#lesson-03-inputs-management-keyboard-mouse) | inputs management | [03_blocks_game_inputs.c](lessons/03_blocks_game_inputs.c) | IsKeyPressed(), IsKeyDown(), <br>IsMouseButtonPressed(), <br>IsMouseButtonDown(), <br>GetMouseX(), GetMouseY()
 [04](#lesson-04-collision-detection-and-resolution) | collision detection and resolution | [04_blocks_game_collisions.c](lessons/04_blocks_game_collisions.c) | CheckCollisionCircleRec(), <br>CheckCollisionRecs(), <br>CheckCollisionCircles()
 [05](#lesson-05-textures-loading-and-drawing) | textures loading and drawing | [05_blocks_game_textures.c](lessons/05_blocks_game_textures.c) | LoadTexture(), UnloadTexture(), <br>DrawTexture()
-[06](#lesson-06-spritefonts-loading-and-text-drawing) | fonts loading and text drawing | [06_blocks_game_text.c](lessons/06_blocks_game_text.c) | LoadSpriteFont(), UnloadSpriteFont(), <br>DrawText(), DrawTextEx()
+[06](#lesson-06-fonts-loading-and-text-drawing) | fonts loading and text drawing | [06_blocks_game_text.c](lessons/06_blocks_game_text.c) | LoadFont(), UnloadFont(), <br>DrawText(), DrawTextEx()
 [07](#lesson-07-sounds-and-music-loading-and-playing) | sounds and music loading and playing | [07_blocks_game_audio.c](lessons/07_blocks_game_audio.c) | InitAudioDevice(), CloseAudioDevice(), <br>LoadSound(), UnloadSound(), <br>PlaySound(), LoadMusicStream(), UnloadMusicStream(), <br>PlayMusicStream()
 
 **NOTE:** Most of the documentation for the challenge is directly included in the source code files as code comments. Read carefully those comments to understand every task and how implement the proposed solutions.
@@ -168,7 +168,7 @@ Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
  - [textures_rectangle](http://www.raylib.com/examples/web/textures/loader.html?name=textures_rectangle) - texture loading and piece drawing
 
 
-### Lesson 06: SpriteFonts loading and text drawing
+### Lesson 06: Fonts loading and text drawing
 
 *Lesson code file to review: [06_blocks_game_text.c](lessons/06_blocks_game_text.c)*
 
@@ -178,10 +178,10 @@ void DrawText(const char *text, int posX, int posY, int fontSize, Color color);
 ```
 But raylib users can also load custom fonts, raylib support multiple fonts formats, including TTF format and BMFonts. To load custom fonts and draw with them, use the following functions:
 ```c
-SpriteFont LoadSpriteFont(const char *fileName);         // Load a SpriteFont image into GPU 
-void UnloadSpriteFont(SpriteFont spriteFont);            // Unload SpriteFont from GPU memory
+Font LoadFont(const char *fileName);         // Load a Font image into GPU 
+void UnloadFont(Font font);                  // Unload Font from GPU memory
 
-void DrawTextEx(SpriteFont spriteFont, const char* text, Vector2 position, int fontSize, int spacing, Color tint);
+void DrawTextEx(Font font, const char* text, Vector2 position, int fontSize, int spacing, Color tint);
 ```
 
 Recommended [raylib examples](http://www.raylib.com/examples.html) to check:

@@ -4,14 +4,18 @@
 *   Lesson 01:      OpenGL intro
 *   Description:    Introduction to OpenGL 3.3 Core profile
 *
-*   NOTE: This example requires the following header-only files:
-*       glad.h      - OpenGL extensions loader (stripped to only required extensions)
-*       raymath.h   - Vector and matrix math functions
+*   Compile rglfw module using:
+*       gcc -c external/rglfw.c -Wall -std=c99 -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33
+*
+*   NOTE: This example also requires the following single-file header-only modules:
+*       glad.h    - OpenGL extensions loader (stripped to only required extensions)
+*       raymath.h - Vector and matrix math functions
 *
 *   Compile example using:
-*       gcc -o $(NAME_PART).exe $(FILE_NAME) -Iexternal -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
+*       gcc -o $(NAME_PART).exe $(FILE_NAME) -Iexternal -Iexternal/glfw/include \
+*           rglfw.o -lopengl32 -lgdi32 -Wall -std=c99
 *
-*   Copyright (c) 2017 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2017-2018 Ramon Santamaria (@raysan5)
 *
 ********************************************************************************************/
 

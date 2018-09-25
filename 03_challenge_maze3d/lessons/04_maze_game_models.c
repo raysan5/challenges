@@ -4,15 +4,19 @@
 *   Lesson 04:      model loading
 *   Description:    model loading and vertex buffer creation
 *
-*   NOTE: This example requires the following header-only files:
-*       glad.h      - OpenGL extensions loader (stripped to only required extensions)
-*       raymath.h   - Vector and matrix math functions
+*   Compile rglfw module using:
+*       gcc -c external/rglfw.c -Wall -std=c99 -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33
+*
+*   NOTE: This example also requires the following single-file header-only modules:
+*       glad.h    - OpenGL extensions loader (stripped to only required extensions)
+*       raymath.h - Vector and matrix math functions
 *       stb_image.h - Multiple formats image loading (BMP, PNG, TGA, JPG...)
 *
 *   Compile example using:
-*       gcc -o $(NAME_PART).exe $(FILE_NAME) -Iexternal -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
+*       gcc -o $(NAME_PART).exe $(FILE_NAME) -Iexternal -Iexternal/glfw/include \
+*           rglfw.o -lopengl32 -lgdi32 -Wall -std=c99
 *
-*   Copyright (c) 2017 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2017-2018 Ramon Santamaria (@raysan5)
 *
 ********************************************************************************************/
 
@@ -1097,7 +1101,7 @@ static Mesh LoadOBJ(const char *fileName)
                 {
                     // If normals not defined, they are calculated from the 3 vertices [N = (V2 - V1) x (V3 - V1)]
                     Vector3 norm = Vector3CrossProduct(Vector3Subtract(midVertices[vCount[1]-1], midVertices[vCount[0]-1]), Vector3Subtract(midVertices[vCount[2]-1], midVertices[vCount[0]-1]));
-                    Vector3Normalize(&norm);
+                    norm = Vector3Normalize(norm);
 
                     mesh.normals[nCounter] = norm.x;
                     mesh.normals[nCounter + 1] = norm.y;

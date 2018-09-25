@@ -7,24 +7,27 @@
 *   NOTE: This example requires OpenGL 3.3 or ES2 for shaders support,
 *       OpenGL 1.1 does not support shaders but it can also be used.
 *
-*   Compile rlgl module using:
-*       gcc -c external/rlgl.c -Wall -std=c99 -DRLGL_STANDALONE -DRAYMATH_IMPLEMENTATION -DGRAPHICS_API_OPENGL_33
+*   Compile rglfw module using:
+*       gcc -c external/rglfw.c -Wall -std=c99 -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33
 *
-*   NOTE: rlgl module requires the following header-only files:
+*   NOTE: This example also requires the following single-file header-only modules:
+*       rlgl.h    - OpenGL abstraction layer for OpenGL 1.1 immediate-mode style coding
 *       glad.h    - OpenGL extensions loader (stripped to only required extensions)
 *       raymath.h - Vector and matrix math functions
 *
 *   Compile example using:
-*       gcc -o $(NAME_PART).exe $(FILE_NAME) -Iexternal rlgl.o -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
+*       gcc -o $(NAME_PART).exe $(FILE_NAME) -Iexternal -Iexternal/glfw/include \
+*           rglfw.o -lopengl32 -lgdi32 -Wall -std=c99
 *
-*   Copyright (c) 2017 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2017-2018 Ramon Santamaria (@raysan5)
 *
 ********************************************************************************************/
 
-#include <GLFW/glfw3.h>         // Windows/Context and inputs management
-
 #define RLGL_STANDALONE
+#define RLGL_IMPLEMENTATION
 #include "rlgl.h"               // rlgl library: OpenGL 1.1 immediate-mode style coding
+
+#include <GLFW/glfw3.h>         // Windows/Context and inputs management
 
 #include <stdio.h>              // Standard input-output C library
 #include <stdlib.h>             // Memory management functions: malloc(), free()
@@ -33,15 +36,6 @@
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
-
-// Rectangle type
-typedef struct Rectangle {
-    int x;
-    int y;
-    int width;
-    int height;
-} Rectangle;
-
 // LESSON 05: Image struct
 // NOTE: Image data is stored in CPU memory (RAM)
 typedef struct Image {

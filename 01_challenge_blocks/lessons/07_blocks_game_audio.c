@@ -5,12 +5,12 @@
 *   Description:    Sounds and music loading and playing
 *
 *   Compile example using:
-*       gcc -o $(NAME_PART).exe $(FILE_NAME) -lraylib -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
+*       gcc -o $(NAME_PART).exe $(FILE_NAME) -lraylib -lopengl32 -lgdi32 -Wall -std=c99
 *
-*   This example has been created using raylib 1.8 (www.raylib.com)
+*   This example has been created using raylib 2.0 (www.raylib.com)
 *   raylib is licensed under an unmodified zlib/libpng license (View raylib.h for details)
 *
-*   Copyright (c) 2017 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2017-2018 Ramon Santamaria (@raysan5)
 *
 ********************************************************************************************/
 
@@ -79,8 +79,8 @@ int main()
     Texture2D texPaddle = LoadTexture("resources/paddle.png");
     Texture2D texBrick = LoadTexture("resources/brick.png");
     
-    // LESSON 06: SpriteFonts loading and text drawing
-    SpriteFont font = LoadSpriteFont("resources/setback.png");
+    // LESSON 06: Fonts loading and text drawing
+    Font font = LoadFont("resources/setback.png");
     
     // LESSSON 07: Sounds and music loading and playing
     InitAudioDevice();              // Initialize audio system
@@ -301,7 +301,7 @@ int main()
                 {
                     // Draw TITLE screen here!
                     
-                    // LESSON 06: SpriteFonts loading and text drawing
+                    // LESSON 06: Fonts loading and text drawing
                     DrawTextEx(font, "BLOCKS", (Vector2){ 100, 80 }, 160, 10, MAROON);   // Draw Title
 
                     if ((framesCounter/30)%2 == 0) DrawText("PRESS [ENTER] to START", GetScreenWidth()/2 - MeasureText("PRESS [ENTER] to START", 20)/2, GetScreenHeight()/2 + 60, 20, DARKGRAY);
@@ -362,7 +362,7 @@ int main()
                 {
                     // Draw END screen here!
                     
-                    // LESSON 06: SpriteFonts loading and text drawing
+                    // LESSON 06: Fonts loading and text drawing
                     // Draw ending message
                     DrawTextEx(font, "GAME FINISHED", (Vector2){ 80, 100 }, 80, 6, MAROON);
 
@@ -386,8 +386,8 @@ int main()
     UnloadTexture(texPaddle);
     UnloadTexture(texBrick);
     
-    // LESSON 06: SpriteFonts loading and text drawing
-    UnloadSpriteFont(font);
+    // LESSON 06: Fonts loading and text drawing
+    UnloadFont(font);
     
     // LESSSON 07: Sounds and music loading and playing
     UnloadSound(fxStart);

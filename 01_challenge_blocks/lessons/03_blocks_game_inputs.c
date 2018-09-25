@@ -5,12 +5,12 @@
 *   Description:    Read user inputs (keyboard, mouse)
 *
 *   Compile example using:
-*       gcc -o $(NAME_PART).exe $(FILE_NAME) -lraylib -lglfw3 -lopengl32 -lgdi32 -Wall -std=c99
+*       gcc -o $(NAME_PART).exe $(FILE_NAME) -lraylib -lopengl32 -lgdi32 -Wall -std=c99
 *
-*   This example has been created using raylib 1.8 (www.raylib.com)
+*   This example has been created using raylib 2.0 (www.raylib.com)
 *   raylib is licensed under an unmodified zlib/libpng license (View raylib.h for details)
 *
-*   Copyright (c) 2017 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2017-2018 Ramon Santamaria (@raysan5)
 *
 ********************************************************************************************/
 

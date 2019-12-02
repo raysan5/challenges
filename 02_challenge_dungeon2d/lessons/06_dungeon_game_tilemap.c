@@ -4,22 +4,26 @@
 *   Lesson 06:      tilemap
 *   Description:    Tilemap loading and drawing
 *
-*   NOTE: This example requires OpenGL 3.3 or ES2 for shaders support,
+*   NOTE 1: This example requires OpenGL 3.3 or ES2 for shaders support,
 *       OpenGL 1.1 does not support shaders but it can also be used.
 *
-*   Compile rglfw module using:
-*       gcc -c external/rglfw.c -Wall -std=c99 -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33
-*
-*   NOTE: This example also requires the following single-file header-only modules:
+*   NOTE 2: This example requires the following single-file header-only modules:
 *       rlgl.h    - OpenGL abstraction layer for OpenGL 1.1 immediate-mode style coding
 *       glad.h    - OpenGL extensions loader (stripped to only required extensions)
 *       raymath.h - Vector and matrix math functions
+*
+*   NOTE 3: This example requires GLFW library that is first compiled rglfw.o module and
+*       later is linked on example compilation.
+*
+*   Compile rglfw module using:
+*       gcc -c external/rglfw.c -Wall -std=c99 -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33 \
+*           -Iexternal/glfw/include -Iexternal/glfw/deps/mingw
 *
 *   Compile example using:
 *       gcc -o $(NAME_PART).exe $(FILE_NAME) -Iexternal -Iexternal/glfw/include \
 *           rglfw.o -lopengl32 -lgdi32 -Wall -std=c99
 *
-*   Copyright (c) 2017-2018 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2017-2019 Ramon Santamaria (@raysan5)
 *
 ********************************************************************************************/
 

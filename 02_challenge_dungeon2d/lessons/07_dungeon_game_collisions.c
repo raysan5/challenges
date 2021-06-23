@@ -557,9 +557,9 @@ static Image LoadBMP(const char *fileName)
 	if ((padding/8) > 0) extraBytes = 4 - (padding/8);
 
 	// Read image data
-	for(int j = 0; j < imgHeight; j++)
+	for (int j = 0; j < imgHeight; j++)
 	{
-		for(int i = 0; i < imgWidth; i++)
+		for (int i = 0; i < imgWidth; i++)
 		{
 			fread(&imgData[j*imgWidth + i].b, 1, 1, bmpFile);
 			fread(&imgData[j*imgWidth + i].g, 1, 1, bmpFile);

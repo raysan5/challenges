@@ -226,7 +226,7 @@ Recommended [raylib examples](http://www.raylib.com/examples.html) to check:
  - [audio_music_stream](http://www.raylib.com/examples/web/audio/loader.html?name=audio_music_stream) - music loading and streaming
  
 ## Getting help 
-We strongly encourage you using the online [raylib forum](forum.raylib.com) to discuss challenges with other students. However, we recommend not to look at any source code written by other students or share your source code with others **while working on the challenge**.
+We recommend joining [raylib Discord community](https://discord.gg/raylib) to discuss challenges with other students and developers. However, we recommend not to look at any source code written by other students or share your source code with others **while working on the challenge**.
 
 ## License
 

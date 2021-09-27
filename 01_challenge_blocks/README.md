@@ -50,7 +50,7 @@ raylib is simple and easy-to-use library to learn videogmaes programming. raylib
 Here there are some interesting links to know more about raylib:
 
  - [raylib Features](http://www.raylib.com)
- - [raylib Architecture](https://github.com/raysan5/raylib/wiki/raylib-arquitecture)
+ - [raylib Architecture](https://github.com/raysan5/raylib/wiki/raylib-architecture)
  - [raylib Functions Cheatsheet](http://www.raylib.com/cheatsheet/cheatsheet.html)
  - [raylib Data Structures](https://github.com/raysan5/raylib/wiki/raylib-data-structures)
  - [raylib Examples](http://www.raylib.com/examples.html)

@@ -71,7 +71,7 @@ void CloseWindow(void);                                     // Close window
 
 In this lesson we will learn how to initialize the graphic device context to be able to access and control the GPU. We will use two great auxiliar libraries: 
 
-  - [rlgl](https://github.com/raysan5/raylib/blob/develop/src/rlgl.h) - Simple library to manage graphic device and the underlying OpenGL layer.
+  - [rlgl](https://github.com/raysan5/raylib/blob/master/src/rlgl.h) - Simple library to manage graphic device and the underlying OpenGL layer.
   - [glad](https://github.com/Dav1dde/glad) -  Library to manage OpenGL extensions loading.
   
 rlgl is a very thin layer (wrapper) over OpenGL that simplyfies its usage to a immediate-mode programming style, it means, just defining vertex in a very direct mode to draw elements on the screen. OpenGL 1.1 just worked that way and it was very intuitive to the user but since OpenGL 2.1 that working mode became deprecated and replaced by a more complex (and efficient) way of working, using shaders. rlgl allows programming in an immediate mode style over any OpenGL version, it just takes care internally of vertex buffers filling and setting things up simplifying graphics programming to the user without losing the power of newer OpenGL versions.
@@ -84,7 +84,7 @@ Once the window is created with the correct configuration for the desired graphi
 
 Functions to be implemented:
 ```c
-void InitGraphicDevice(int screenWidth, int screenHeight);  // Initialize graphic device using rlgl
+void InitGraphicsDevice(int screenWidth, int screenHeight);  // Initialize graphic device using rlgl
 ```
 
 ### Lesson 03: Inputs management
@@ -108,7 +108,6 @@ To draw basic shapes using rlgl, we can just define them as a series of vertices
 Functions to be implemented:
 ```c
 void DrawLine(Vector2 startPos, Vector2 endPos, Color color);               // Draw a line between two points
-void DrawCircle(Vector2 center, float radius, Color color);                 // Draw a filled circle
 void DrawRectangle(int posX, int posY, int width, int height, Color color); // Draw a filled rectangle
 ```
 
@@ -116,7 +115,7 @@ void DrawRectangle(int posX, int posY, int width, int height, Color color); // D
 
 *Lesson code file to review: [05_dungeon_game_textures.c](lessons/05_dungeon_game_textures.c)*
 
-To draw textures on our canvas, first we need to understand load some image data from an image file (probably decompressing and decodyfing read data) to obtain an array of pixels; after that, image data that is placed in RAM memory should be uploaded to VRAM memory (also referred as GPU memory) and configured with some additional display parameters, this is called **a texture**. Once image is loaded and converted to texture, it's ready to be drawn.
+To draw textures on our canvas, first we need to understand how to load some image data from an image file (probably decompressing and decodyfing read data) to obtain an array of pixels; after that, image data that is placed in RAM memory should be uploaded to VRAM memory (also referred as GPU memory) and configured with some additional display parameters, this is called **a texture**. Once image is loaded and converted to texture, it's ready to be drawn.
 
 Some important concepts to remember:
  1. Image data is loaded from an image file and is stored in RAM memory. That data is usually compressed and/or codyfied in the image file and should be expanded to a simple array of pixels.
@@ -131,7 +130,7 @@ void UnloadImage(Image image);                           // Unload image data fr
 Texture2D LoadTextureFromImage(Image image);             // Load texture from image data (VRAM)
 void UnloadTexture(Texture2D texture);                   // Unload texture from VRAM
 
-void DrawTexture(Texture2D texture, Vector2 position, Color tint); // Draw texture in screen position coordinates
+void void DrawTexture(Texture2D texture, int posX, int posY, Color tint) // Draw texture in screen position coordinates
 ```
 
 ### Lesson 06: Tilemap data loading
@@ -142,10 +141,10 @@ In this lesson we will learn how to load tilemap data from a simple text file an
 
 Functions to be implemented:
 ```c
-Tilemap LoadTilemap(const char *fileName);         // Load tilemap data from file (RAM)
-void UnloadTilemap(Tilemap map);                   // Unload tilemap data from RAM
+Tilemap LoadTilemap(const char* valuesMap, const char* collidersMap);                // Load tilemap data from file (RAM)
+void UnloadTilemap(Tilemap map);                                                     // Unload tilemap data from RAM
 
-void DrawTilemap(Tilemap map, Texture2D tileset, Vector2 position, float tileSize);  // Draw tilemap using tileset texture
+void DrawTilemap(Tilemap map, Texture2D tileset);  // Draw tilemap using tileset texture
 ```
 
 To build our map, we will use tiles. A tile is a small image piece that we use as a brick to build a level. A tilemap defines the type and position of each tile (brick) to create the level. More info about tiles [here](https://en.wikipedia.org/wiki/Tile-based_video_game).

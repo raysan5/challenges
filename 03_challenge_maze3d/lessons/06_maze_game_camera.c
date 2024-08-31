@@ -1182,9 +1182,6 @@ static Mesh LoadOBJ(const char *fileName)
     // NOTE: At this point we have all vertex, texcoord, normal data for the model in mesh struct
     TraceLog(LOG_INFO, "[%s] Mesh loaded successfully in RAM (CPU)", fileName);
     
-    // Upload mesh data into VRAM
-    UploadMeshData(&mesh);
-
     return mesh;
 }
 

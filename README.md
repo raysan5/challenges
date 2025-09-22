@@ -67,4 +67,4 @@ All challenges code is licensed under an unmodified zlib/libpng license.
 
 Check [LICENSE](LICENSE) for further details.
 
-*Copyright (c) 2017 Ramon Santamaria ([@raysan5](https://twitter.com/raysan5))*
+*Copyright (c) 2017 Ramon Santamaria ([@raysan5](https://github.com/raysan5))*
